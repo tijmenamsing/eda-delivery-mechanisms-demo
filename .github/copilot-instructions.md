@@ -249,8 +249,8 @@ Request/response types for all API endpoints. Define with Zod:
 **POST /articles request:** `{ title, content, author }`
 **POST /articles response:** `{ article: Article }` (status 201)
 **GET /articles response:** `{ articles: Article[] }`
-**POST /updates request:** `{ blogId, content, author, minute, type }`
-**POST /updates response:** `{ update: BlogUpdate }` (status 201)
+**POST /blogs/:blogId/updates request:** `{ content, author, minute, type }` (note: `blogId` comes from the URL path, not the body)
+**POST /blogs/:blogId/updates response:** `{ update: BlogUpdate }` (status 201, 404 if blog not found)
 **GET /blogs response:** `{ blogs: Blog[] }`
 **GET /blogs/:blogId response:** `{ blog: Blog, updates: BlogUpdate[] }` (404 with `{ error: { code, message } }` if blog not found)
 
@@ -279,22 +279,23 @@ apps/api/
 │   │   ├── env.ts
 │   │   ├── dynamo.ts
 │   │   ├── redis.ts
+│   │   ├── logger.ts
 │   │   └── events/
 │   │       ├── publisher.interface.ts
 │   │       ├── inprocess.publisher.ts
 │   │       └── eventbridge.publisher.ts
 │   ├── routes/
 │   │   ├── articles.ts
-│   │   ├── updates.ts
 │   │   ├── blogs.ts
+│   │   ├── health.ts
 │   │   └── stream.ts
 │   ├── middleware/
 │   │   ├── error.ts
+│   │   ├── request-id.ts
 │   │   └── validate.ts
 │   └── index.ts
 ├── test/
 │   ├── articles.test.ts
-│   ├── updates.test.ts
 │   ├── blogs.test.ts
 │   └── stream.test.ts
 ├── .env.example
@@ -342,6 +343,18 @@ Export two functions:
 
 **Important:** Never use the shared client for pub/sub subscriptions. Each SSE connection must create its own subscriber client via `createSubscriberClient()` and disconnect it when the SSE connection closes.
 
+### `src/lib/logger.ts`
+
+Export a configured `pino` logger instance. Fields:
+
+- `service`: `"@newswire/api"`
+- `level`: `env.NODE_ENV === 'production' ? 'info' : 'debug'`
+- `timestamp`: ISO 8601 via `pino.stdTimeFunctions.isoTime`
+
+Export a `createChildLogger(bindings: Record<string, unknown>)` helper that returns a child logger with additional context (e.g. `traceId`, `blogId`). All route handlers and middleware should use child loggers, never the root logger directly.
+
+Never use `console.log` in production code paths — always use the pino logger.
+
 ### `src/lib/events/publisher.interface.ts`
 
 ```typescript
@@ -374,6 +387,18 @@ export function validate<T>(schema: ZodSchema<T>): RequestHandler;
 
 Express error handler middleware. Logs the error, returns appropriate HTTP status. Handle `ZodError` as 400, unknown errors as 500. Never leak stack traces in production.
 
+### `src/middleware/request-id.ts`
+
+Express middleware that:
+
+- Reads `X-Request-Id` header from the incoming request (set by ALB in production)
+- If not present, generates a UUID via `crypto.randomUUID()`
+- Attaches it to `req` (extend Express types) as `req.requestId`
+- Sets `X-Request-Id` response header for traceability
+- Creates a child logger with `{ traceId: requestId }` and attaches it to `req` as `req.log`
+
+All downstream route handlers use `req.log` instead of importing the logger directly. This ensures every log line within a request includes the trace ID automatically.
+
 ### `src/routes/articles.ts`
 
 Express router for `/articles`:
@@ -394,20 +419,6 @@ Express router for `/articles`:
 - Publish `ArticlePublishedEvent` via injected `EventPublisher`
 - Return `{ article: Article }` with status 201
 
-### `src/routes/updates.ts`
-
-Express router for `/updates`:
-
-**`POST /updates`**
-
-- Validate body with `PostUpdateRequestSchema` from `@newswire/types`
-- Verify the blog exists by fetching it from the blogs table — return 404 if not found
-- Generate `updateId` with `crypto.randomUUID()`
-- Set `postedAt` to current ISO timestamp
-- Write to DynamoDB updates table
-- Publish `UpdatePostedEvent` via injected `EventPublisher`
-- Return `{ update: BlogUpdate }` with status 201
-
 ### `src/routes/blogs.ts`
 
 Express router for `/blogs`:
@@ -423,6 +434,28 @@ Express router for `/blogs`:
 - Query updates table for all updates with this `blogId`, sorted by `postedAt` ascending
 - Return `{ blog: Blog, updates: BlogUpdate[] }`
 - Return 404 if blog not found
+
+**`POST /blogs/:blogId/updates`**
+
+- Validate body with `PostUpdateRequestSchema` from `@newswire/types`
+- Verify the blog exists by fetching it from the blogs table — return 404 if not found
+- Generate `updateId` with `crypto.randomUUID()`
+- Set `postedAt` to current ISO timestamp
+- Set `blogId` from `req.params.blogId` (not from the request body)
+- Write to DynamoDB updates table
+- Publish `UpdatePostedEvent` via injected `EventPublisher`
+- Return `{ update: BlogUpdate }` with status 201
+
+### `src/routes/health.ts`
+
+Express router for `/health`. Used by the ALB target group health check.
+
+**`GET /health`**
+
+- Ping the Redis client (`redis.ping()`)
+- Return `{ status: "ok" }` with status 200 if healthy
+- Return `{ status: "degraded", error: "..." }` with status 503 if Redis is unreachable
+- Must respond within 3 seconds (use a timeout) — ALB health checks have tight deadlines
 
 ### `src/routes/stream.ts`
 
@@ -441,25 +474,31 @@ X-Accel-Buffering: no
 
 2. Call `res.flushHeaders()` immediately
 
-3. Send a `connected` event to confirm the stream is open:
+3. Send a `connected` event to confirm the stream is open, including a `retry:` field for the client's reconnection interval:
 
 ```
+retry: 3000
 event: connected
 data: {"blogId": "<blogId>"}
 
 ```
 
-4. Create a dedicated subscriber via `createSubscriberClient()`
+4. If the `Last-Event-ID` request header is present, query DynamoDB for updates with `postedAt` after the last received update and replay them as `update` events before subscribing to Redis. This closes the gap between disconnect and reconnect.
+
+5. Create a dedicated subscriber via `createSubscriberClient()`
 
 5. Subscribe to `blog:<blogId>:updates` channel
 
 6. On each Redis message, parse the JSON payload and write to the response:
 
 ```
+id: <updateId>
 event: update
 data: <json payload>
 
 ```
+
+The `id:` field enables automatic reconnection: when the browser's `EventSource` reconnects, it sends a `Last-Event-ID` header. The stream endpoint should check for this header on connection and, if present, replay any updates from DynamoDB with `postedAt` greater than the last received update's `postedAt`. This ensures no updates are lost during brief disconnects.
 
 Note the double newline — it is required by the SSE spec.
 
@@ -486,7 +525,8 @@ Express app entry point:
 
 - Configure CORS — allow `http://localhost:3000` in development, configurable via `ALLOWED_ORIGIN` env var
 - Parse JSON bodies
-- Mount routers: `/articles`, `/updates`, `/blogs`, `/stream`
+- Mount request-id middleware early (before routes)
+- Mount routers: `/articles`, `/blogs` (includes `POST /blogs/:blogId/updates`), `/stream`, `/health`
 - Mount error middleware last
 - Instantiate the correct `EventPublisher` based on `env.EVENT_PUBLISHER`
 - Inject the publisher into routes (do not use a global singleton — use dependency injection via router factory functions)
@@ -504,24 +544,22 @@ Use Vitest + Supertest for all API tests. Mock DynamoDB and Redis using `vi.mock
 - `POST /articles` creates article, calls publisher, returns 201
 - `POST /articles` with invalid body returns 400
 
-**`updates.test.ts`:**
-
-- `POST /updates` creates update, calls publisher, returns 201
-- `POST /updates` with invalid body returns 400
-- `POST /updates` with unknown blogId returns 404
-
 **`blogs.test.ts`:**
 
 - `GET /blogs` returns all blogs
 - `GET /blogs/:blogId` returns blog with updates sorted by `postedAt`
 - `GET /blogs/:blogId` with unknown blogId returns 404
+- `POST /blogs/:blogId/updates` creates update, calls publisher, returns 201
+- `POST /blogs/:blogId/updates` with invalid body returns 400
+- `POST /blogs/:blogId/updates` with unknown blogId returns 404
 
 **`stream.test.ts`:**
 
 - `GET /stream/:blogId` sets correct SSE headers
-- `GET /stream/:blogId` sends `connected` event on open
-- Redis message is forwarded as SSE `update` event
+- `GET /stream/:blogId` sends `connected` event with `retry:` field on open
+- Redis message is forwarded as SSE `update` event with `id:` field
 - Subscriber client is disconnected on request close
+- `GET /stream/:blogId` with `Last-Event-ID` header replays missed updates from DynamoDB
 
 ---
 
@@ -641,7 +679,7 @@ Client Component. Form fields:
 - Content (textarea)
 - Author (text input, pre-filled with "Verslaggever")
 
-On submit: `POST` to `API_URL/updates`. Show success message on success. Reset content field on success (keep other fields).
+On submit: `POST` to `API_URL/blogs/<selectedBlogId>/updates`. Show success message on success. Reset content field on success (keep other fields).
 
 ### `hooks/useLiveBlog.ts`
 
@@ -662,7 +700,8 @@ Implementation:
 - Open `EventSource` on `API_URL/stream/<blogId>`
 - Listen for `connected` event — set `connected: true`
 - Listen for `update` event — parse JSON, prepend to updates array
-- Listen for `error` event — set `connected: false`, implement exponential backoff reconnection (start at 1s, max 30s)
+- `EventSource` handles reconnection automatically via the `retry:` field from the server. The server sends `id:` with each event, so the browser sends `Last-Event-ID` on reconnect and the server replays missed updates. No custom backoff logic needed.
+- Listen for `error` event — set `connected: false`
 - Clean up `EventSource` and reconnect timer in `useEffect` return function
 - Never leak event listeners
 
@@ -679,7 +718,10 @@ export async function getBlogs(): Promise<Blog[]>;
 export async function getBlog(
   blogId: string,
 ): Promise<{ blog: Blog; updates: BlogUpdate[] }>;
-export async function postUpdate(data: PostUpdateRequest): Promise<BlogUpdate>;
+export async function postUpdate(
+  blogId: string,
+  data: PostUpdateRequest,
+): Promise<BlogUpdate>;
 ```
 
 ### `next.config.ts`
@@ -836,7 +878,7 @@ Depends on `DataStack`. Creates:
 **Lambda function (Authoring)** via `AuthoringFunction` construct:
 
 - Runtime: `nodejs20.x`
-- Handler: serves `POST /articles` and `POST /updates`
+- Handler: serves `POST /articles`, `GET /articles`, `GET /blogs`, `GET /blogs/{blogId}`, `POST /blogs/{blogId}/updates`
 - Environment variables from DataStack outputs
 - Grant read/write to DynamoDB tables
 - Publishes to EventBridge bus
@@ -844,10 +886,10 @@ Depends on `DataStack`. Creates:
 **API Gateway REST API:**
 
 - `POST /articles` → Authoring Lambda
-- `POST /updates` → Authoring Lambda
 - `GET /articles` → Authoring Lambda
 - `GET /blogs` → Authoring Lambda
 - `GET /blogs/{blogId}` → Authoring Lambda
+- `POST /blogs/{blogId}/updates` → Authoring Lambda
 
 **ECS Fargate cluster + service** via `SseService` construct:
 
@@ -885,7 +927,7 @@ L3 construct that encapsulates the ECS Fargate service + ALB for SSE. Exposes:
 Configure ALB target group with:
 
 - `deregistrationDelay: Duration.seconds(30)`
-- Health check on `GET /blogs` (returns 200)
+- Health check on `GET /health` (returns 200 when Redis is reachable)
 
 ### `lib/constructs/authoring-function.ts`
 

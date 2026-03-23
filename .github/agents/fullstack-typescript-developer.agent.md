@@ -30,7 +30,7 @@ You are the primary engineer on the NewsWire project. You know this codebase ins
 ### Backend
 
 - **Express** — lean, typed middleware, proper error handling with `next(err)`. You never swallow errors silently.
-- **Server-Sent Events** — you know the SSE wire format (`data:\n\n`, `event:`, `id:`, `retry:`), correct HTTP headers (`Content-Type: text/event-stream`, `Cache-Control: no-cache`, `Connection: keep-alive`), and how to flush correctly in Node.js.
+- **Server-Sent Events** — you know the SSE wire format (`data:\n\n`, `event:`, `id:`, `retry:`), correct HTTP headers (`Content-Type: text/event-stream`, `Cache-Control: no-cache`, `Connection: keep-alive`), and how to flush correctly in Node.js. You always send `id:` with each event to enable `Last-Event-ID` reconnection, and replay missed events from DynamoDB on reconnect.
 - **Redis pub/sub** — you know that each SSE subscriber needs a dedicated Redis connection. You never share a pub/sub connection across multiple subscriptions.
 - **DynamoDB** — single-table design patterns, access patterns first, GSIs only when necessary. You use the DynamoDB Document Client, never raw AttributeValues.
 
@@ -135,24 +135,25 @@ newswire/
 │       ├── src/
 │       │   ├── routes/
 │       │   │   ├── articles.ts     # GET/POST /articles
-│       │   │   ├── updates.ts      # POST /updates
-│       │   │   ├── blogs.ts        # GET /blogs, GET /blogs/:blogId
+│       │   │   ├── blogs.ts        # GET /blogs, GET /blogs/:blogId, POST /blogs/:blogId/updates
+│       │   │   ├── health.ts       # GET /health (ALB health check)
 │       │   │   └── stream.ts       # GET /stream/:blogId — SSE
 │       │   ├── lib/
 │       │   │   ├── env.ts          # Zod-validated environment
 │       │   │   ├── dynamo.ts       # DynamoDB Document Client
 │       │   │   ├── redis.ts        # Redis pub/sub clients
+│       │   │   ├── logger.ts       # Pino structured logger
 │       │   │   └── events/
 │       │   │       ├── publisher.interface.ts
 │       │   │       ├── inprocess.publisher.ts
 │       │   │       └── eventbridge.publisher.ts
 │       │   ├── middleware/
 │       │   │   ├── error.ts        # Error handler middleware
+│       │   │   ├── request-id.ts   # Request ID + child logger middleware
 │       │   │   └── validate.ts     # Zod validation middleware
 │       │   └── index.ts            # Express entry point
 │       ├── test/
 │       │   ├── articles.test.ts
-│       │   ├── updates.test.ts
 │       │   ├── blogs.test.ts
 │       │   └── stream.test.ts
 │       ├── package.json
@@ -239,12 +240,14 @@ Error responses follow a standard envelope:
 
 ## Logging and observability
 
-- Use structured JSON logging everywhere.
-- Log fields: `level`, `time` (ISO 8601), `service` (package name), `traceId` (from request header or generated), `msg`, and any relevant context.
+- Use `pino` for structured JSON logging everywhere. Never use `console.log` in production code paths.
+- Export a configured pino instance from `src/lib/logger.ts`. Use child loggers with `traceId` bindings for per-request context.
+- Log fields: `level`, `time` (ISO 8601), `service` (package name), `traceId` (from `X-Request-Id` header or generated), `msg`, and any relevant context.
+- The `request-id` middleware generates/reads the trace ID and attaches a child logger to `req.log`. All route handlers use `req.log`.
 - Never log PII or sensitive data (tokens, full request bodies from untrusted input).
 - Log at the appropriate level: `debug` for internal state, `info` for significant events (connection opened, event published), `warn` for recoverable anomalies, `error` for unhandled errors with a full `err` object.
 - In Lambda, log the `requestId` from the Lambda context as `traceId` on every log line.
-- CloudWatch Logs Insights queries rely on structured JSON — never use unstructured `console.log` in production code paths.
+- CloudWatch Logs Insights queries rely on structured JSON.
 
 ---
 
