@@ -310,3 +310,29 @@ This file is used as context for GitHub Copilot with the Claude model. When gene
 - When in doubt about a design decision, refer back to the reasoning in this file
 - Generate complete, working code — no placeholders, no `// TODO`, no `// implement this`
 - Always generate the corresponding test file alongside any new module
+
+---
+
+## Implementation notes
+
+The following deviations from the original spec were made during the initial implementation and are now the canonical approach.
+
+### 1. `/updates` is a top-level route, not nested under `/blogs`
+
+`POST /updates` with `blogId` in the request body. The spec called for `POST /blogs/:blogId/updates`. The flat URL keeps the updates router self-contained and makes `EventPublisher` injection cleaner. `PostUpdateRequestSchema` includes `blogId` as a required `z.string().uuid()` field.
+
+### 2. `PostUpdateRequestSchema` includes `blogId` in the body
+
+Follows from deviation #1. The schema lives in `packages/types/src/api.ts`.
+
+### 3. SSE `id:` field and `Last-Event-ID` replay not implemented
+
+No `id:` field is sent; reconnection resumes from the live stream without replaying missed events. To implement: on `GET /stream/:blogId`, read the `Last-Event-ID` header, query DynamoDB for updates posted after that ID, flush them before starting the Redis subscription, and add `id: <updateId>\n` to every SSE write.
+
+### 4. SSE subscriber cleanup uses a defensive Promise check
+
+`subscriber.unsubscribe()` is called only when its return value is a Promise (guarded with a conditional `.catch()`). This handles the case where the subscriber is already disconnected without silently swallowing real errors.
+
+### 5. `vitest.workspace.ts` is deprecated in Vitest 3
+
+Replace with `vitest.config.ts` at the monorepo root using `test.projects: ["apps/api", "packages/types"]`.

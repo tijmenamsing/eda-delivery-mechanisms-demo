@@ -1102,3 +1102,73 @@ Never deviate from these without flagging explicitly:
 - All environment variables documented in `.env.example`
 - DynamoDB table names always environment-prefixed via env vars
 - Redis channels always use the `REDIS_CHANNELS` constant from `@newswire/types`
+
+---
+
+## Implementation notes
+
+The following deviations from this spec were made during the initial implementation and are now the canonical approach.
+
+### 1. `/updates` is a top-level route, not nested under `/blogs`
+
+**Spec said:** `POST /blogs/:blogId/updates` (nested route in the blogs router)
+
+**Implemented as:** `POST /updates` with `blogId` in the request body
+
+**Reason:** Keeping updates as a separate router with a flat URL makes dependency injection cleaner — the updates router receives the `EventPublisher` without coupling it to the blogs router. The `blogId` is still validated (blog-not-found → 404). The API schema in `packages/types/src/api.ts` reflects this: `PostUpdateRequestSchema` includes `blogId` as a required field.
+
+**Impact:** The journalist UI `PostUpdateForm` and all API clients must call `POST /updates`, not `POST /blogs/:blogId/updates`. The test file is `test/updates.test.ts`.
+
+---
+
+### 2. `PostUpdateRequestSchema` includes `blogId` in the body
+
+**Spec said:** `blogId` comes from the URL path, not the body
+
+**Implemented as:** `blogId` is a `z.string().uuid()` field in `PostUpdateRequestSchema`
+
+**Reason:** Follows directly from deviation #1. The schema lives in `packages/types/src/api.ts`.
+
+---
+
+### 3. SSE `id:` field and `Last-Event-ID` reconnection replay not implemented
+
+**Spec said:** Send `id: <updateId>` with each SSE event; on reconnect check `Last-Event-ID` header and replay missed updates from DynamoDB
+
+**Implemented as:** No `id:` field is sent; reconnection resumes from the live stream without replaying missed events
+
+**Reason:** The reconnect-replay feature requires a DynamoDB query on every new SSE connection, which adds latency and complexity. Omitted for the initial demo; the browser's `EventSource` will still auto-reconnect, it just won't recover any updates posted during the disconnected period.
+
+**To implement later:** On `GET /stream/:blogId`, read the `Last-Event-ID` request header. If present, query the updates table for all updates with `postedAt` > the `postedAt` of the update with that `updateId`, and flush them to the client before starting the Redis subscription. Add `id: <updateId>\n` to every SSE event write.
+
+---
+
+### 4. SSE subscriber cleanup uses a defensive Promise check
+
+**Spec said:** "Do not use `try/catch` to swallow errors silently"
+
+**Implemented as:** The `req.on('close')` handler wraps `subscriber.unsubscribe()` in a conditional `.catch()` — only if the return value is a Promise
+
+**Reason:** `ioredis`'s `unsubscribe()` returns a Promise. When the connection is already destroyed (e.g. in tests after mock reset), calling `.catch()` on `undefined` would throw a `TypeError`. The guard is not silencing a real error; it is handling the case where the subscriber is already gone. The `disconnect()` call and log line always execute regardless.
+
+---
+
+### 5. `vitest.workspace.ts` format is deprecated in Vitest 3
+
+**Spec said:** Configure a Vitest workspace using `vitest.workspace.ts`
+
+**Implemented as:** The file was created as specified, but Vitest 3.x emits a deprecation warning: _"The workspace file is deprecated and will be removed in the next major. Please, use the `test.projects` field in the root config file instead."_
+
+**To fix:** Replace `vitest.workspace.ts` with a `vitest.config.ts` at the monorepo root:
+
+```ts
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    projects: ["apps/api", "packages/types"],
+  },
+});
+```
+
+Delete `vitest.workspace.ts` once the config file is in place.

@@ -1,0 +1,22 @@
+{
+  "name": "newswire",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "lint": "turbo run lint",
+    "infra:up": "docker-compose up -d",
+    "infra:down": "docker-compose down",
+    "db:init": "tsx scripts/init-local.ts",
+    "db:seed": "tsx scripts/seed.ts",
+    "setup": "pnpm infra:up && sleep 3 && pnpm db:init && pnpm db:seed"
+  },
+  "devDependencies": {
+    "turbo": "^2.4.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
