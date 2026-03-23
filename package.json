@@ -1,0 +1,32 @@
+{
+  "name": "bbtg-news",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "lint": "turbo run lint",
+    "deploy:infra": "cd infra && pnpm run deploy",
+    "deploy:web": "AWS_PROFILE=personal npx tsx scripts/deploy-web.ts",
+    "deploy": "pnpm run deploy:infra && pnpm run deploy:web",
+    "destroy": "cd infra && pnpm run destroy",
+    "cdk:synth": "cd infra && pnpm synth",
+    "cdk:bootstrap": "cd infra && npx cdk bootstrap aws://870456164660/eu-west-1 --profile personal -c environment=dev -c awsAccountId=870456164660 -c awsRegion=eu-west-1",
+    "infra:up": "docker-compose up -d",
+    "infra:down": "docker-compose down",
+    "db:init": "tsx --env-file=.env scripts/init-local.ts",
+    "db:seed": "tsx --env-file=.env scripts/seed.ts",
+    "setup": "pnpm infra:up && sleep 3 && pnpm db:init && pnpm db:seed"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-cloudformation": "^3.1015.0",
+    "@aws-sdk/client-cloudfront": "^3.1015.0",
+    "esbuild": "^0.24.0",
+    "tsx": "^4.19.0",
+    "turbo": "^2.4.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "packageManager": "pnpm@10.29.3"
+}

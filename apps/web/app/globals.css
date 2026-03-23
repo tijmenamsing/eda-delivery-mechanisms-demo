@@ -1,0 +1,44 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  background: #5000C4;
+  color: #fff;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code, pre, .mono {
+  font-family: var(--font-mono), monospace;
+}
+
+a {
+  color: #fff;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: #FF6B00;
+  text-decoration: none;
+}
+
+h1, h2, h3 {
+  text-transform: uppercase;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(255,255,255,0.4) !important;
+}
+
+select {
+  color: rgba(255,255,255,0.4) !important;
+}

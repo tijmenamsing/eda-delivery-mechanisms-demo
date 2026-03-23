@@ -1,0 +1,27 @@
+{
+  "name": "@bbtg-news/infra",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "tsc --noEmit",
+    "cdk": "cdk",
+    "synth": "cdk synth -c environment=dev -c awsAccountId=870456164660 -c awsRegion=eu-west-1",
+    "deploy": "cdk deploy --all --require-approval never -c environment=dev -c awsAccountId=870456164660 -c awsRegion=eu-west-1 --profile personal",
+    "destroy": "cdk destroy --all --force -c environment=dev -c awsAccountId=870456164660 -c awsRegion=eu-west-1 --profile personal"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.170.0",
+    "constructs": "^10.4.0",
+    "@bbtg-news/types": "workspace:*",
+    "ioredis": "^5.4.0"
+  },
+  "devDependencies": {
+    "aws-cdk": "^2.170.0",
+    "esbuild": "^0.24.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
