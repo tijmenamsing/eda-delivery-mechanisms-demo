@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Syne, JetBrains_Mono } from "next/font/google";
 import type { ReactNode } from "react";
+import "./globals.css";
 
 const syne = Syne({
   subsets: ["latin"],
@@ -27,22 +28,6 @@ export default function RootLayout({
 }): ReactNode {
   return (
     <html lang="nl" className={`${syne.variable} ${jetbrainsMono.variable}`}>
-      <head>
-        <style>{`
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body {
-            font-family: var(--font-syne), system-ui, sans-serif;
-            background: #0f1115;
-            color: #e4e4e7;
-            min-height: 100vh;
-          }
-          code, pre, .mono {
-            font-family: var(--font-mono), monospace;
-          }
-          a { color: #60a5fa; text-decoration: none; }
-          a:hover { text-decoration: underline; }
-        `}</style>
-      </head>
       <body>{children}</body>
     </html>
   );

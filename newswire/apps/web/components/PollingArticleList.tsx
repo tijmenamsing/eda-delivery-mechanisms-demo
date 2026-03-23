@@ -16,7 +16,8 @@ export function PollingArticleList({
   initialArticles,
 }: PollingArticleListProps): ReactNode {
   const [articles, setArticles] = useState<Article[]>(initialArticles);
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  // Initialize as null to avoid hydration mismatch — Date.now() differs between server and client
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [nextPollIn, setNextPollIn] = useState(POLL_INTERVAL_MS / 1000);
 
   const poll = useCallback(async () => {
@@ -35,7 +36,12 @@ export function PollingArticleList({
     }
   }, []);
 
-  // Poll every 60 seconds
+  // Set initial timestamp on mount (client-only)
+  useEffect(() => {
+    setLastUpdated(new Date());
+  }, []);
+
+  // Poll every 10 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       void poll();
@@ -53,11 +59,13 @@ export function PollingArticleList({
     return () => clearInterval(countdown);
   }, []);
 
-  const formattedTime = lastUpdated.toLocaleTimeString("nl-NL", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
+  const formattedTime = lastUpdated
+    ? lastUpdated.toLocaleTimeString("nl-NL", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })
+    : "—";
 
   return (
     <>
@@ -85,6 +93,7 @@ export function PollingArticleList({
         <span
           className="mono"
           style={{ fontSize: "0.75rem", color: "#60a5fa" }}
+          suppressHydrationWarning
         >
           Laatste update: {formattedTime}
         </span>
