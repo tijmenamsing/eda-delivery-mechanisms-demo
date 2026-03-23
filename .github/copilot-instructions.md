@@ -487,9 +487,9 @@ data: {"blogId": "<blogId>"}
 
 5. Create a dedicated subscriber via `createSubscriberClient()`
 
-5. Subscribe to `blog:<blogId>:updates` channel
+6. Subscribe to `blog:<blogId>:updates` channel
 
-6. On each Redis message, parse the JSON payload and write to the response:
+7. On each Redis message, parse the JSON payload and write to the response:
 
 ```
 id: <updateId>
@@ -502,7 +502,7 @@ The `id:` field enables automatic reconnection: when the browser's `EventSource`
 
 Note the double newline — it is required by the SSE spec.
 
-7. Set up a keepalive interval (every 30 seconds) that sends a comment line:
+8. Set up a keepalive interval (every 30 seconds) that sends a comment line:
 
 ```
 : keepalive
@@ -511,7 +511,7 @@ Note the double newline — it is required by the SSE spec.
 
 This prevents ALB and proxies from closing idle connections.
 
-8. On `req.on('close')`:
+9. On `req.on('close')`:
    - Clear the keepalive interval
    - Unsubscribe from Redis channel
    - Disconnect the subscriber client
@@ -613,10 +613,10 @@ This design supports static export — no ISR or server runtime needed. The init
 
 Split into:
 
-- Server Component (`page.tsx`) — fetches initial blog data and updates from the API, passes to the client component
+- Server Component (`page.tsx`) — fetches initial blog data and updates from the API at build time, passes to the client component. Must export `generateStaticParams()` that fetches all blog IDs from `GET /blogs` — required for static export with dynamic routes.
 - Client Component (`LiveBlog.tsx`) — renders the live blog and connects the SSE stream
 
-The page must be functional without JavaScript (initial updates visible from SSR). SSE enriches the experience progressively.
+The page is functional without JavaScript (initial updates are pre-rendered at build time). SSE enriches the experience progressively.
 
 ### `app/journalist/page.tsx` — Journalist UI
 
