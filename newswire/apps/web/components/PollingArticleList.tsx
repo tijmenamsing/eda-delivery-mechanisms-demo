@@ -6,7 +6,7 @@ import type { Article } from "@newswire/types/models";
 import type { GetArticlesResponse } from "@newswire/types/api";
 import { ArticleList } from "./ArticleList";
 
-const POLL_INTERVAL_MS = 60_000;
+const POLL_INTERVAL_MS = 10_000;
 
 interface PollingArticleListProps {
   initialArticles: Article[];
