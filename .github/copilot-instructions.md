@@ -603,11 +603,11 @@ Root layout. Dark background (`#0f1115`). Import `Syne` and `JetBrains Mono` fro
 
 ### `app/page.tsx` — Homepage
 
-Server Component. Fetches articles on the server with `fetch()` using `{ next: { revalidate: 60 } }` — this is Next.js's built-in polling via ISR. Display the `ArticleList` component with the fetched articles.
+Server Component that renders the page shell and initial articles via SSR. Wraps `ArticleList` in a Client Component boundary.
 
-Include a visible indicator showing when the page was last updated (server render timestamp). This makes the polling behaviour tangible during the demo.
+The `ArticleList` component (Client Component) handles polling: it fetches `GET /articles` every 60 seconds via `setInterval` and updates the displayed list. A visible "Laatste update" timestamp updates on each poll, making the polling behaviour tangible during the demo. This contrasts clearly with the SSE live blog where updates arrive instantly.
 
-Fetch from `process.env.API_URL + '/articles'`.
+This design supports static export — no ISR or server runtime needed. The initial SSR fetch provides a fast first paint; client-side polling keeps the data fresh.
 
 ### `app/blog/[blogId]/page.tsx` — Live blog reader
 
@@ -629,7 +629,11 @@ Simple, functional design. No authentication needed.
 
 ### `components/ArticleList.tsx`
 
-Renders a list of `ArticleCard` components. Shows "Laatste update: <timestamp>" above the list to make polling visible.
+**Client Component** (`"use client"`).
+
+Props: `initialArticles: Article[]`
+
+Polls `GET /articles` every 60 seconds via `setInterval` in a `useEffect`. Displays a list of `ArticleCard` components. Shows "Laatste update: <timestamp>" above the list — the timestamp updates visibly on each poll to demonstrate the delay. On first render, uses `initialArticles` from SSR. Cleans up the interval on unmount.
 
 ### `components/ArticleCard.tsx`
 
@@ -726,6 +730,8 @@ export async function postUpdate(
 
 ### `next.config.ts`
 
+Enable static export with `output: 'export'` for production builds. This generates a fully static site in `out/` that can be deployed to S3 + CloudFront.
+
 Configure `rewrites` to proxy `/api/*` to `API_URL` in development. This avoids CORS issues in the browser:
 
 ```typescript
@@ -738,6 +744,8 @@ async rewrites() {
   ]
 }
 ```
+
+Note: `rewrites` are not supported with `output: 'export'`. Set `output: 'export'` only when `NODE_ENV === 'production'` so dev mode retains the proxy.
 
 ### `.env.example`
 
@@ -826,12 +834,14 @@ infra/
 │   └── newswire.ts
 ├── lib/
 │   stacks/
+│   │   ├── network-stack.ts
 │   │   ├── data-stack.ts
 │   │   ├── api-stack.ts
 │   │   └── frontend-stack.ts
 │   └── constructs/
 │       ├── sse-service.ts
-│       └── authoring-function.ts
+│       ├── authoring-function.ts
+│       └── event-consumer-function.ts
 ├── test/
 │   ├── data-stack.test.ts
 │   ├── api-stack.test.ts
@@ -849,11 +859,24 @@ CDK app entry point. Read `env` from CDK context:
 - `awsAccountId` — AWS account ID (required)
 - `awsRegion` — AWS region (default: `eu-west-1`)
 
-Instantiate stacks in order: `DataStack` → `ApiStack` (depends on DataStack) → `FrontendStack` (depends on ApiStack).
+Instantiate stacks in order: `NetworkStack` → `DataStack` (depends on NetworkStack) → `ApiStack` (depends on DataStack) → `FrontendStack` (depends on ApiStack).
 
 Tag all stacks with `Project: newswire` and `Environment: <env>`.
 
+### `lib/stacks/network-stack.ts`
+
+**VPC** — all compute and data services run inside a VPC:
+
+- 2 Availability Zones (sufficient for a demo, use 3 in real production)
+- Public subnets — for ALB
+- Private subnets with egress (NAT Gateway) — for ECS tasks, Lambda functions, ElastiCache
+- In dev, use a single NAT Gateway to save cost. In prod, one per AZ.
+
+Export the VPC and subnet references for downstream stacks.
+
 ### `lib/stacks/data-stack.ts`
+
+Depends on `NetworkStack`.
 
 **DynamoDB tables** — use `RemovalPolicy.RETAIN` in prod, `DESTROY` in dev:
 
@@ -865,9 +888,11 @@ Enable Point-in-Time Recovery for prod.
 
 **ElastiCache Redis cluster:**
 
-- `CfnSubnetGroup`, `CfnReplicationGroup`
+- `CfnSubnetGroup` using private subnets from NetworkStack
+- `CfnReplicationGroup`
 - Single node for dev, Multi-AZ for prod
 - Engine: Redis 7
+- Security group allowing inbound 6379 from ECS and Lambda security groups only
 
 Export table ARNs and Redis endpoint as stack outputs.
 
@@ -883,7 +908,9 @@ Depends on `DataStack`. Creates:
 - Grant read/write to DynamoDB tables
 - Publishes to EventBridge bus
 
-**API Gateway REST API:**
+**API Gateway HTTP API:**
+
+HTTP API (not REST API) — simpler, cheaper, lower latency. This demo doesn't need REST API features (request validation, API keys, usage plans). CloudFront handles caching, so API Gateway's built-in cache is not needed.
 
 - `POST /articles` → Authoring Lambda
 - `GET /articles` → Authoring Lambda
@@ -894,25 +921,35 @@ Depends on `DataStack`. Creates:
 **ECS Fargate cluster + service** via `SseService` construct:
 
 - Task definition with container from `apps/api` Docker image
-- ALB with HTTPS listener (port 443) and HTTP redirect
+- Runs in private subnets from NetworkStack
+- ALB in public subnets with HTTPS listener (port 443) and HTTP redirect
 - `GET /stream/{blogId}` routed to ECS target group
 - ALB idle timeout: 300 seconds
 - Container environment variables from DataStack outputs
+- Security group allows outbound to Redis security group on port 6379
 
 **EventBridge bus:**
 
 - Custom bus named `newswire-<env>`
 
+**EventBridge rule + consumer Lambda** via `EventConsumerFunction` construct:
+
+- Rule matches events with `source: "newswire.api"` and `detail-type: "UpdatePosted"` on the custom bus
+- Consumer Lambda receives the event, parses the `UpdatePostedEvent` payload with Zod, and publishes it to the Redis channel `blog:<blogId>:updates`
+- This is the bridge between EventBridge and the SSE fanout layer
+- Lambda runs in private subnets with access to ElastiCache security group
+- In local dev, this function is replaced by the `InProcessEventPublisher` which writes directly to Redis
+
 ### `lib/stacks/frontend-stack.ts`
 
 Depends on `ApiStack`. Creates:
 
-**S3 bucket** for Next.js static assets (if using static export) or for CloudFront origin.
+**S3 bucket** for Next.js static export output (`out/` directory). The frontend is fully static — no server runtime needed.
 
 **CloudFront distribution:**
 
-- Default origin: S3 (frontend)
-- Behavior `/api/articles*` → API Gateway (TTL 60s, cache GET only)
+- Default origin: S3 (static frontend via OAC)
+- Behavior `/api/articles*` → API Gateway HTTP API (TTL 60s, cache GET only)
 - Behavior `/stream/*` — **do not add this behavior**. SSE goes direct to ALB, not through CloudFront.
 - Behavior `/api/*` → API Gateway (no cache)
 - WAF WebACL with rate limiting rule (1000 requests per 5 minutes per IP)
@@ -931,7 +968,22 @@ Configure ALB target group with:
 
 ### `lib/constructs/authoring-function.ts`
 
-L3 construct for the Authoring Lambda. Accepts DynamoDB table references and EventBridge bus as props. Handles IAM grants internally.
+L3 construct for the Authoring Lambda. Accepts DynamoDB table references and EventBridge bus as props. Runs in private subnets. Handles IAM grants internally.
+
+### `lib/constructs/event-consumer-function.ts`
+
+L3 construct for the EventBridge → Redis consumer Lambda. Accepts:
+
+- EventBridge bus and rule as props
+- Redis endpoint from DataStack
+- VPC and security group for ElastiCache access
+
+The Lambda handler:
+
+1. Receives EventBridge event
+2. Validates the `detail` payload with `UpdatePostedEventSchema` from `@newswire/types`
+3. Publishes the update to Redis channel `blog:<blogId>:updates` using `REDIS_CHANNELS.blogUpdates(blogId)`
+4. Logs the event with structured JSON (using the Lambda `requestId` as `traceId`)
 
 ### CDK Tests (`test/`)
 
@@ -946,9 +998,11 @@ Use `@aws-cdk/assertions`. Test:
 **`api-stack.test.ts`:**
 
 - Lambda function created with correct runtime
-- API Gateway routes exist
-- ECS service created with correct port
+- API Gateway HTTP API routes exist
+- ECS service created in private subnets with correct port
 - ALB idle timeout is 300 seconds
+- EventBridge rule targets the consumer Lambda
+- Consumer Lambda has VPC configuration and Redis security group access
 
 **`frontend-stack.test.ts`:**
 
@@ -965,7 +1019,8 @@ Create `apps/web/e2e/` folder.
 ### `e2e/homepage.spec.ts`
 
 - Page loads and displays articles
-- After 60 seconds (use `page.clock.tick` to fast-forward), articles are re-fetched
+- "Laatste update" timestamp is visible
+- After 60 seconds (use `page.clock.tick` to fast-forward), articles are re-fetched and timestamp updates
 - New article appears after journalist posts it and poll interval elapses
 
 ### `e2e/liveblog.spec.ts`

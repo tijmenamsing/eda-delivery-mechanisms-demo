@@ -61,13 +61,13 @@ You are the primary engineer on the NewsWire project. You know this codebase ins
 You have full context of the NewsWire platform architecture. Key points you always keep in mind:
 
 **The SSE pattern:**
-EventBridge event → Lambda (consumer) → Redis pub/sub → ECS Fargate (SSE service) → ALB → Browser. The Redis pub/sub layer is load-bearing: it decouples the writer from the reader so any ECS node can serve any SSE connection.
+Authoring Lambda → EventBridge → Consumer Lambda → Redis pub/sub → ECS Fargate (SSE service) → ALB → Browser. The consumer Lambda bridges EventBridge events to Redis. The Redis pub/sub layer is load-bearing: it decouples the writer from the reader so any ECS node can serve any SSE connection.
 
 **Lambda vs ECS:**
 Lambda for short, stateless, event-triggered work (authoring, article fetches). ECS Fargate for long-lived SSE connections. Never put SSE on Lambda in production — idle timeout and per-ms billing make it impractical for high fan-out.
 
 **ALB placement:**
-ALB is only in front of ECS. Lambda endpoints go through API Gateway. Never put an ALB in front of Lambda without a good reason.
+ALB is only in front of ECS. Lambda endpoints go through API Gateway HTTP API (not REST API — HTTP API is simpler and cheaper for this use case). Never put an ALB in front of Lambda without a good reason.
 
 **CloudFront:**
 Caches public, non-personalised API responses (homepage articles, TTL 60s). Never route SSE connections through CloudFront — it buffers responses. SSE goes direct to ALB.
@@ -174,12 +174,14 @@ newswire/
 │   │   └── newswire.ts             # CDK app entry point
 │   ├── lib/
 │   │   ├── stacks/
-│   │   │   ├── api-stack.ts        # ECS, ALB, Lambda
+│   │   │   ├── network-stack.ts    # VPC, subnets, NAT
+│   │   │   ├── api-stack.ts        # ECS, ALB, Lambda, EventBridge
 │   │   │   ├── data-stack.ts       # DynamoDB, ElastiCache
 │   │   │   └── frontend-stack.ts   # CloudFront, S3
 │   │   └── constructs/
 │   │       ├── sse-service.ts      # ECS Fargate + ALB construct
-│   │       └── authoring-fn.ts     # Lambda construct
+│   │       ├── authoring-fn.ts     # Lambda construct
+│   │       └── event-consumer-fn.ts # EventBridge → Redis Lambda
 │   ├── test/
 │   │   ├── data-stack.test.ts
 │   │   ├── api-stack.test.ts
@@ -294,8 +296,8 @@ The following are deliberately excluded from this project:
 
 The demo focuses exclusively on:
 
-1. Homepage with polling (Next.js + API Gateway + Lambda + DynamoDB)
-2. Live event blog with SSE (Express + ECS + Redis + EventBridge stub)
+1. Homepage with client-side polling (Next.js static export + CloudFront + API Gateway HTTP API + Lambda + DynamoDB)
+2. Live event blog with SSE (Express + ECS + Redis + EventBridge + consumer Lambda)
 
 ---
 
