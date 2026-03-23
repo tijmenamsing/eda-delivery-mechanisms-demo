@@ -26,7 +26,7 @@ Build the NewsWire demo application — a digital news platform demonstrating re
 Create the following structure. Every file listed must be created.
 
 ```
-newswire/
+# repo root
 ├── apps/
 │   ├── web/
 │   └── api/

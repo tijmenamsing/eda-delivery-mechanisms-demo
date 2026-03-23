@@ -116,7 +116,7 @@ The Express server handles `SIGTERM`/`SIGINT` to drain SSE connections, disconne
 ## Monorepo structure
 
 ```
-newswire/
+# repo root
 ├── apps/
 │   ├── web/                        # Next.js frontend
 │   │   ├── app/
