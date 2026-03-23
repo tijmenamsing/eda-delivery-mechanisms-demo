@@ -157,6 +157,9 @@ API_URL=http://localhost:3001
 ARTICLES_TABLE=dev-articles
 BLOGS_TABLE=dev-blogs
 UPDATES_TABLE=dev-updates
+
+# Event publishing
+EVENT_PUBLISHER=inprocess
 ```
 
 ---
@@ -172,11 +175,8 @@ export const REDIS_CHANNELS = {
   blogUpdates: (blogId: string) => `blog:${blogId}:updates`,
 } as const;
 
-export const DYNAMO_TABLES = {
-  articles: process.env["ARTICLES_TABLE"] ?? "dev-articles",
-  blogs: process.env["BLOGS_TABLE"] ?? "dev-blogs",
-  updates: process.env["UPDATES_TABLE"] ?? "dev-updates",
-} as const;
+// Table names are NOT defined here — they come from each app's env.ts.
+// This keeps packages/types pure (no process.env side effects at import time).
 
 export const SSE_EVENTS = {
   UPDATE: "update",
@@ -247,12 +247,20 @@ Define EventBridge event shapes:
 Request/response types for all API endpoints. Define with Zod:
 
 **POST /articles request:** `{ title, content, author }`
-**POST /articles response:** `{ article: Article }`
+**POST /articles response:** `{ article: Article }` (status 201)
 **GET /articles response:** `{ articles: Article[] }`
 **POST /updates request:** `{ blogId, content, author, minute, type }`
-**POST /updates response:** `{ update: BlogUpdate }`
+**POST /updates response:** `{ update: BlogUpdate }` (status 201)
 **GET /blogs response:** `{ blogs: Blog[] }`
-**GET /blogs/:blogId response:** `{ blog: Blog, updates: BlogUpdate[] }`
+**GET /blogs/:blogId response:** `{ blog: Blog, updates: BlogUpdate[] }` (404 with `{ error: { code, message } }` if blog not found)
+
+**Error responses** follow a standard envelope:
+
+```ts
+{ "error": { "code": string, "message": string } }
+```
+
+Use `VALIDATION_ERROR` (400), `NOT_FOUND` (404), `INTERNAL_ERROR` (500). Never leak stack traces.
 
 Export all schemas and inferred types. No barrel files — import from the specific file.
 
@@ -310,6 +318,7 @@ Required variables:
 - `ARTICLES_TABLE`
 - `BLOGS_TABLE`
 - `UPDATES_TABLE`
+- `ALLOWED_ORIGIN` (optional — CORS origin, defaults to `http://localhost:3000`)
 - `EVENT_PUBLISHER` (`'inprocess' | 'eventbridge'`, default: `'inprocess'`)
 - `EVENTBRIDGE_BUS_NAME` (required when `EVENT_PUBLISHER=eventbridge`)
 
@@ -392,6 +401,7 @@ Express router for `/updates`:
 **`POST /updates`**
 
 - Validate body with `PostUpdateRequestSchema` from `@newswire/types`
+- Verify the blog exists by fetching it from the blogs table — return 404 if not found
 - Generate `updateId` with `crypto.randomUUID()`
 - Set `postedAt` to current ISO timestamp
 - Write to DynamoDB updates table
@@ -482,6 +492,7 @@ Express app entry point:
 - Inject the publisher into routes (do not use a global singleton — use dependency injection via router factory functions)
 - Listen on `env.PORT`
 - Log startup info including which event publisher is active
+- Handle `SIGTERM` and `SIGINT` for graceful shutdown: stop accepting new connections, drain existing SSE streams, disconnect Redis clients, then exit
 
 ### Tests (`test/`)
 
@@ -498,6 +509,12 @@ Use Vitest + Supertest for all API tests. Mock DynamoDB and Redis using `vi.mock
 - `POST /updates` creates update, calls publisher, returns 201
 - `POST /updates` with invalid body returns 400
 - `POST /updates` with unknown blogId returns 404
+
+**`blogs.test.ts`:**
+
+- `GET /blogs` returns all blogs
+- `GET /blogs/:blogId` returns blog with updates sorted by `postedAt`
+- `GET /blogs/:blogId` with unknown blogId returns 404
 
 **`stream.test.ts`:**
 

@@ -82,6 +82,9 @@ Always code against an `EventPublisher` interface. Locally, use `InProcessEventP
 - EventBridge: in-process stub
 - No LocalStack Pro features
 
+**Graceful shutdown:**
+The Express server handles `SIGTERM`/`SIGINT` to drain SSE connections, disconnect Redis clients, and exit cleanly. This is critical for ECS task replacement without dropping active streams.
+
 ---
 
 ## Code style and conventions
@@ -118,24 +121,39 @@ newswire/
 │   ├── web/                        # Next.js frontend
 │   │   ├── app/
 │   │   │   ├── page.tsx            # Homepage (polling)
-│   │   │   └── blog/[id]/
-│   │   │       └── page.tsx        # Live blog (SSE)
+│   │   │   ├── blog/[blogId]/
+│   │   │   │   └── page.tsx        # Live blog (SSE)
+│   │   │   └── journalist/
+│   │   │       └── page.tsx        # Journalist UI
 │   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── lib/
 │   │   ├── package.json
 │   │   └── tsconfig.json
 │   │
 │   └── api/                        # Node.js/Express backend
 │       ├── src/
 │       │   ├── routes/
-│       │   │   ├── authoring.ts    # POST /updates — publishes to EventBridge
+│       │   │   ├── articles.ts     # GET/POST /articles
+│       │   │   ├── updates.ts      # POST /updates
+│       │   │   ├── blogs.ts        # GET /blogs, GET /blogs/:blogId
 │       │   │   └── stream.ts       # GET /stream/:blogId — SSE
 │       │   ├── lib/
-│       │   │   ├── eventbridge.ts  # EventBridge client
-│       │   │   ├── redis.ts        # ElastiCache pub/sub client
-│       │   │   └── dynamo.ts       # DynamoDB client
+│       │   │   ├── env.ts          # Zod-validated environment
+│       │   │   ├── dynamo.ts       # DynamoDB Document Client
+│       │   │   ├── redis.ts        # Redis pub/sub clients
+│       │   │   └── events/
+│       │   │       ├── publisher.interface.ts
+│       │   │       ├── inprocess.publisher.ts
+│       │   │       └── eventbridge.publisher.ts
+│       │   ├── middleware/
+│       │   │   ├── error.ts        # Error handler middleware
+│       │   │   └── validate.ts     # Zod validation middleware
 │       │   └── index.ts            # Express entry point
 │       ├── test/
-│       │   ├── authoring.test.ts
+│       │   ├── articles.test.ts
+│       │   ├── updates.test.ts
+│       │   ├── blogs.test.ts
 │       │   └── stream.test.ts
 │       ├── package.json
 │       └── tsconfig.json
@@ -143,8 +161,10 @@ newswire/
 ├── packages/
 │   └── types/                      # Shared TypeScript types
 │       ├── src/
-│       │   ├── events.ts           # UpdatePostedEvent, ArticlePublishedEvent etc.
-│       │   └── models.ts           # Article, BlogUpdate etc.
+│       │   ├── constants.ts        # Redis channels, SSE event names
+│       │   ├── models.ts           # Article, Blog, BlogUpdate (Zod + types)
+│       │   ├── events.ts           # ArticlePublishedEvent, UpdatePostedEvent
+│       │   └── api.ts              # Request/response schemas
 │       ├── package.json
 │       └── tsconfig.json
 │
@@ -155,23 +175,33 @@ newswire/
 │   │   ├── stacks/
 │   │   │   ├── api-stack.ts        # ECS, ALB, Lambda
 │   │   │   ├── data-stack.ts       # DynamoDB, ElastiCache
-│   │   │   └── frontend-stack.ts  # CloudFront, S3
+│   │   │   └── frontend-stack.ts   # CloudFront, S3
 │   │   └── constructs/
 │   │       ├── sse-service.ts      # ECS Fargate + ALB construct
-│   │       └── authoring-fn.ts    # Lambda construct
+│   │       └── authoring-fn.ts     # Lambda construct
 │   ├── test/
-│   │   └── api-stack.test.ts       # CDK assertions
+│   │   ├── data-stack.test.ts
+│   │   ├── api-stack.test.ts
+│   │   └── frontend-stack.test.ts
 │   ├── package.json
 │   └── tsconfig.json
 │
+├── scripts/                        # Dev tooling
+│   ├── init-local.ts               # Create DynamoDB tables in LocalStack
+│   └── seed.ts                     # Seed demo data
+│
 ├── docs/                           # Documentation
 │   ├── architecture.md             # Architecture decisions (ADRs)
+│   ├── local-dev.md                # Local development guide
+│   └── demo-script.md              # Presentation demo script
 │
 ├── package.json                    # pnpm workspace root
 ├── pnpm-workspace.yaml             # Workspace package paths
 ├── tsconfig.base.json              # Shared TS config
 ├── turbo.json                      # Turborepo pipeline
-└── vitest.workspace.ts             # Vitest workspace config
+├── docker-compose.yml              # Local Redis + LocalStack
+├── vitest.workspace.ts             # Vitest workspace config
+└── .env.example                    # Root environment template
 ```
 
 New packages go under `packages/` if they are shared; under `apps/` if they are a deployable unit. Never put business logic directly in `apps/` — extract to `packages/` so it can be unit-tested independently of the framework.
@@ -180,23 +210,22 @@ New packages go under `packages/` if they are shared; under `apps/` if they are 
 
 ## Type-sharing conventions
 
-- All event types (EventBridge + Redis) live in `packages/types/src/events/`. They are discriminated unions with a `type` literal field.
-- All Zod schemas that are used in more than one package live in `packages/types/src/schemas/`.
+- All event types (EventBridge + Redis) live in `packages/types/src/events.ts`. They are discriminated unions with a `type` literal field.
+- All Zod schemas that are used in more than one package live in `packages/types/src/` (e.g. `models.ts`, `api.ts`).
 - The inferred TypeScript type always lives next to its Zod schema: `export type Foo = z.infer<typeof FooSchema>`.
 - Never import types from an `apps/` package — only from `packages/`.
 - `packages/types` has zero runtime dependencies except `zod`.
+- `packages/types` must NOT read `process.env` — it must be a pure type/schema package with no side effects.
 
 ---
 
 ## API response conventions
 
-All HTTP responses from the Express API and Lambda handlers follow this envelope:
+Success responses use domain-specific shapes (e.g. `{ articles: [...] }`, `{ blog, updates }`). There is no generic `{ data: T }` wrapper — for a demo project, direct shapes are clearer.
+
+Error responses follow a standard envelope:
 
 ```ts
-// Success
-{ "data": T }
-
-// Error
 { "error": { "code": string, "message": string } }
 ```
 
@@ -221,7 +250,7 @@ All HTTP responses from the Express API and Lambda handlers follow this envelope
 
 ## Security
 
-- This is a demo project. Some basis security are followed, but advanced security hardening is out of scope.
+- This is a demo project. Basic security practices are followed, but advanced security hardening is out of scope.
 - **CORS** — configure explicitly. In development allow `http://localhost:3000`; in production allow only the CloudFront domain. Never use `origin: '*'` in production.
 - **Input sanitisation** — Zod handles structural validation. For free-text fields stored in DynamoDB, strip leading/trailing whitespace. No HTML is ever stored or rendered raw.
 - **Secrets** — never read secrets from environment variables at the call site. Always go through the `env.ts` module which validates at startup.
