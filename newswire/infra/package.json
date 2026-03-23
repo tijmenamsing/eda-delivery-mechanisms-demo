@@ -1,9 +1,0 @@
-{
-  "name": "@newswire/infra",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "build": "echo 'CDK infra — not yet implemented'",
-    "lint": "echo 'CDK infra — not yet implemented'"
-  }
-}
