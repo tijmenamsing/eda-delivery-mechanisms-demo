@@ -2,17 +2,23 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { randomUUID } from "node:crypto";
 
-const endpoint = process.env["DYNAMODB_ENDPOINT"] ?? "http://localhost:4566";
+const endpoint = process.env["DYNAMODB_ENDPOINT"];
 const region = process.env["AWS_REGION"] ?? "eu-west-1";
 
 const client = DynamoDBDocumentClient.from(
   new DynamoDBClient({
     region,
-    endpoint,
-    credentials: {
-      accessKeyId: process.env["AWS_ACCESS_KEY_ID"] ?? "test",
-      secretAccessKey: process.env["AWS_SECRET_ACCESS_KEY"] ?? "test",
-    },
+    // Only override endpoint for LocalStack. Omit in production so the SDK
+    // resolves the real AWS endpoint and uses the default credential chain.
+    ...(endpoint
+      ? {
+          endpoint,
+          credentials: {
+            accessKeyId: process.env["AWS_ACCESS_KEY_ID"] ?? "test",
+            secretAccessKey: process.env["AWS_SECRET_ACCESS_KEY"] ?? "test",
+          },
+        }
+      : {}),
   }),
   { marshallOptions: { removeUndefinedValues: true } },
 );

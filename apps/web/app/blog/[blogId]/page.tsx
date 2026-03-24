@@ -1,10 +1,19 @@
 import type { ReactNode } from "react";
-import { fetchBlogDetail } from "@/lib/api";
+import { fetchBlogDetail, fetchBlogs } from "@/lib/api";
 import { LiveBlog } from "@/components/LiveBlog";
 import { notFound } from "next/navigation";
 
 interface BlogPageProps {
   params: Promise<{ blogId: string }>;
+}
+
+export async function generateStaticParams(): Promise<{ blogId: string }[]> {
+  try {
+    const blogs = await fetchBlogs();
+    return blogs.map((b) => ({ blogId: b.blogId }));
+  } catch {
+    return [];
+  }
 }
 
 export default async function BlogPage({
