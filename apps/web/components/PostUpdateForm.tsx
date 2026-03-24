@@ -2,17 +2,17 @@
 
 import { useState, useEffect } from "react";
 import type { ReactNode, FormEvent } from "react";
-import type { Blog } from "@newswire/types/models";
-import type { BlogUpdate } from "@newswire/types/models";
+import type { Blog } from "@bbtg-news/types/models";
+import type { BlogUpdate } from "@bbtg-news/types/models";
 import { postUpdate, fetchBlogs } from "@/lib/api";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "0.625rem 0.75rem",
-  background: "#1a1b23",
-  border: "1px solid #27272a",
+  background: "#12121c",
+  border: "1px solid #1e1e2e",
   borderRadius: "0.375rem",
-  color: "#e4e4e7",
+  color: "#e8e8ef",
   fontSize: "0.9rem",
   fontFamily: "inherit",
 };
@@ -21,17 +21,17 @@ const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: "0.8rem",
   fontWeight: 600,
-  color: "#a1a1aa",
+  color: "#9898ab",
   marginBottom: "0.375rem",
 };
 
 const updateTypes: { value: BlogUpdate["type"]; label: string }[] = [
-  { value: "commentary", label: "💬 Commentary" },
-  { value: "goal", label: "⚽ Goal" },
-  { value: "card", label: "🟨 Card" },
-  { value: "substitution", label: "🔄 Substitution" },
-  { value: "halftime", label: "⏸ Halftime" },
-  { value: "fulltime", label: "🏁 Full time" },
+  { value: "commentary", label: "💬 Commentaar" },
+  { value: "keynote", label: "🎤 Keynote" },
+  { value: "session", label: "📚 Sessie" },
+  { value: "break", label: "☕ Pauze" },
+  { value: "milestone", label: "🏁 Mijlpaal" },
+  { value: "social", label: "🥂 Sociaal" },
 ];
 
 export function PostUpdateForm(): ReactNode {
@@ -84,9 +84,9 @@ export function PostUpdateForm(): ReactNode {
       onSubmit={handleSubmit}
       style={{
         padding: "1.5rem",
-        background: "#1a1b23",
+        background: "#12121c",
         borderRadius: "0.5rem",
-        border: "1px solid #27272a",
+        border: "1px solid #1e1e2e",
       }}
     >
       <h3 style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: "1.25rem" }}>
@@ -126,7 +126,7 @@ export function PostUpdateForm(): ReactNode {
           </select>
         </div>
         <div style={{ width: 100 }}>
-          <label style={labelStyle}>Minuut</label>
+          <label style={labelStyle}>Tijdstip</label>
           <input
             type="number"
             value={minute}
@@ -144,7 +144,7 @@ export function PostUpdateForm(): ReactNode {
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Goal! Ajax komt op 1-0 voorsprong..."
+          placeholder="De keynote over cloud soevereiniteit is begonnen..."
           required
           rows={3}
           style={{ ...inputStyle, resize: "vertical" }}
@@ -157,7 +157,7 @@ export function PostUpdateForm(): ReactNode {
           type="text"
           value={author}
           onChange={(e) => setAuthor(e.target.value)}
-          placeholder="Jan de Vries"
+          placeholder="BBTG Redactie"
           required
           style={inputStyle}
         />
@@ -168,7 +168,7 @@ export function PostUpdateForm(): ReactNode {
         disabled={status === "loading"}
         style={{
           padding: "0.625rem 1.5rem",
-          background: "#16a34a",
+          background: "#2ECC71",
           color: "white",
           border: "none",
           borderRadius: "0.375rem",
@@ -188,9 +188,9 @@ export function PostUpdateForm(): ReactNode {
             marginTop: "1rem",
             padding: "0.75rem",
             borderRadius: "0.375rem",
-            background: status === "success" ? "#052e16" : "#450a0a",
-            border: `1px solid ${status === "success" ? "#166534" : "#991b1b"}`,
-            color: status === "success" ? "#4ade80" : "#f87171",
+            background: status === "success" ? "#0a1f12" : "#2a0a00",
+            border: `1px solid ${status === "success" ? "#1a4a2a" : "#8a3000"}`,
+            color: status === "success" ? "#2ECC71" : "#FF6B00",
             fontSize: "0.85rem",
           }}
         >

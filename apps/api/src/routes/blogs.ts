@@ -1,5 +1,5 @@
 import { Router } from "express";
-import type { Blog, BlogUpdate } from "@newswire/types/models";
+import type { Blog, BlogUpdate } from "@bbtg-news/types/models";
 import { getItem, scanItems, queryItems } from "../lib/dynamo.js";
 import { env } from "../lib/env.js";
 

@@ -6,8 +6,8 @@
 
 body {
   font-family: var(--font-syne), system-ui, sans-serif;
-  background: #0f1115;
-  color: #e4e4e7;
+  background: #0a0a12;
+  color: #e8e8ef;
   min-height: 100vh;
 }
 
@@ -16,7 +16,7 @@ code, pre, .mono {
 }
 
 a {
-  color: #60a5fa;
+  color: #64D5FF;
   text-decoration: none;
 }
 

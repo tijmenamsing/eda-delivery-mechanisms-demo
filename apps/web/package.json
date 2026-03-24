@@ -1,5 +1,5 @@
 {
-  "name": "@newswire/web",
+  "name": "@bbtg-news/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@newswire/types": "workspace:*",
+    "@bbtg-news/types": "workspace:*",
     "next": "^15.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

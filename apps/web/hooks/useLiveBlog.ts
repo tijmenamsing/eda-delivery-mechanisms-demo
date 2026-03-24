@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import type { UpdatePostedEvent } from "@newswire/types/events";
-import type { BlogUpdate } from "@newswire/types/models";
-import { SSE_EVENTS } from "@newswire/types/constants";
+import type { UpdatePostedEvent } from "@bbtg-news/types/events";
+import type { BlogUpdate } from "@bbtg-news/types/models";
+import { SSE_EVENTS } from "@bbtg-news/types/constants";
 import { getSSEUrl } from "@/lib/api";
 
 interface UseLiveBlogOptions {

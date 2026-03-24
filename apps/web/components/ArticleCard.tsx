@@ -1,4 +1,4 @@
-import type { Article } from "@newswire/types/models";
+import type { Article } from "@bbtg-news/types/models";
 import type { ReactNode } from "react";
 
 interface ArticleCardProps {
@@ -21,9 +21,9 @@ export function ArticleCard({ article }: ArticleCardProps): ReactNode {
     <article
       style={{
         padding: "1.25rem",
-        background: "#1a1b23",
+        background: "#12121c",
         borderRadius: "0.5rem",
-        border: "1px solid #27272a",
+        border: "1px solid #1e1e2e",
       }}
     >
       <h2 style={{ fontSize: "1.25rem", fontWeight: 600, marginBottom: "0.5rem" }}>
@@ -31,7 +31,7 @@ export function ArticleCard({ article }: ArticleCardProps): ReactNode {
       </h2>
       <p
         style={{
-          color: "#a1a1aa",
+          color: "#9898ab",
           fontSize: "0.875rem",
           lineHeight: 1.6,
           marginBottom: "0.75rem",
@@ -44,7 +44,7 @@ export function ArticleCard({ article }: ArticleCardProps): ReactNode {
           display: "flex",
           justifyContent: "space-between",
           fontSize: "0.75rem",
-          color: "#71717a",
+          color: "#5e5e72",
         }}
       >
         <span>Door {article.author}</span>

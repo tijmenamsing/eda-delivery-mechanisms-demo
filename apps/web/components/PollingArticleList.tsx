@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { ReactNode } from "react";
-import type { Article } from "@newswire/types/models";
-import type { GetArticlesResponse } from "@newswire/types/api";
+import type { Article } from "@bbtg-news/types/models";
+import type { GetArticlesResponse } from "@bbtg-news/types/api";
 import { ArticleList } from "./ArticleList";
 
 const POLL_INTERVAL_MS = 10_000;
@@ -76,23 +76,23 @@ export function PollingArticleList({
           alignItems: "center",
           marginBottom: "1.5rem",
           padding: "0.75rem 1rem",
-          background: "#1a1b23",
+          background: "#12121c",
           borderRadius: "0.5rem",
-          border: "1px solid #27272a",
+          border: "1px solid #1e1e2e",
         }}
       >
-        <span style={{ fontSize: "0.8rem", color: "#a1a1aa" }}>
+        <span style={{ fontSize: "0.8rem", color: "#9898ab" }}>
           🔄 Volgende poll over{" "}
           <span
             className="mono"
-            style={{ color: "#facc15", fontWeight: 600 }}
+            style={{ color: "#FF6B00", fontWeight: 600 }}
           >
             {nextPollIn}s
           </span>
         </span>
         <span
           className="mono"
-          style={{ fontSize: "0.75rem", color: "#60a5fa" }}
+          style={{ fontSize: "0.75rem", color: "#64D5FF" }}
           suppressHydrationWarning
         >
           Laatste update: {formattedTime}

@@ -12,12 +12,12 @@ export const ArticleSchema = z.object({
 export type Article = z.infer<typeof ArticleSchema>;
 
 export const BlogUpdateType = z.enum([
-  "goal",
-  "card",
-  "substitution",
+  "keynote",
+  "session",
+  "break",
   "commentary",
-  "halftime",
-  "fulltime",
+  "milestone",
+  "social",
 ]);
 
 export type BlogUpdateType_ = z.infer<typeof BlogUpdateType>;
@@ -39,9 +39,9 @@ export const BlogStatusSchema = z.enum(["active", "closed"]);
 export const BlogSchema = z.object({
   blogId: z.string().uuid(),
   title: z.string().min(1),
-  matchHomeTeam: z.string().min(1),
-  matchAwayTeam: z.string().min(1),
-  matchDate: z.string(),
+  eventName: z.string().min(1),
+  eventDate: z.string(),
+  eventLocation: z.string().min(1),
   status: BlogStatusSchema,
   createdAt: z.string().datetime(),
 });

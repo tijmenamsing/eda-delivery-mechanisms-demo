@@ -52,7 +52,7 @@ const server = app.listen(env.PORT, () => {
       eventPublisher: env.EVENT_PUBLISHER,
       nodeEnv: env.NODE_ENV,
     },
-    `NewsWire API listening on port ${env.PORT}`,
+    `BBTG Nieuws API listening on port ${env.PORT}`,
   );
 });
 

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { REDIS_CHANNELS, SSE_EVENTS } from "@newswire/types/constants";
+import { REDIS_CHANNELS, SSE_EVENTS } from "@bbtg-news/types/constants";
 import { createSubscriberClient } from "../lib/redis.js";
 import { logger } from "../lib/logger.js";
 

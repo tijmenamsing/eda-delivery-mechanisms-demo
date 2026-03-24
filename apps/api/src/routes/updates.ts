@@ -1,13 +1,13 @@
 import { Router } from "express";
 import { randomUUID } from "node:crypto";
-import { PostUpdateRequestSchema } from "@newswire/types/api";
-import type { BlogUpdate } from "@newswire/types/models";
-import type { UpdatePostedEvent } from "@newswire/types/events";
+import { PostUpdateRequestSchema } from "@bbtg-news/types/api";
+import type { BlogUpdate } from "@bbtg-news/types/models";
+import type { UpdatePostedEvent } from "@bbtg-news/types/events";
 import type { EventPublisher } from "../lib/events/publisher.interface.js";
 import { putItem, getItem } from "../lib/dynamo.js";
 import { env } from "../lib/env.js";
 import { validate } from "../middleware/validate.js";
-import type { Blog } from "@newswire/types/models";
+import type { Blog } from "@bbtg-news/types/models";
 
 export function createUpdatesRouter(publisher: EventPublisher): Router {
   const router = Router();

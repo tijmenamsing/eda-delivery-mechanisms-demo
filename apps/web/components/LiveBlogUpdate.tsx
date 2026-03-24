@@ -1,4 +1,4 @@
-import type { BlogUpdate } from "@newswire/types/models";
+import type { BlogUpdate } from "@bbtg-news/types/models";
 import type { ReactNode } from "react";
 
 interface LiveBlogUpdateProps {
@@ -6,12 +6,12 @@ interface LiveBlogUpdateProps {
 }
 
 const typeStyles: Record<BlogUpdate["type"], { icon: string; accent: string }> = {
-  goal: { icon: "⚽", accent: "#4ade80" },
-  card: { icon: "🟨", accent: "#facc15" },
-  substitution: { icon: "🔄", accent: "#60a5fa" },
-  commentary: { icon: "💬", accent: "#a1a1aa" },
-  halftime: { icon: "⏸", accent: "#c084fc" },
-  fulltime: { icon: "🏁", accent: "#f87171" },
+  keynote: { icon: "🎤", accent: "#FF6B00" },
+  session: { icon: "📚", accent: "#64D5FF" },
+  break: { icon: "☕", accent: "#F19A16" },
+  commentary: { icon: "💬", accent: "#9898ab" },
+  milestone: { icon: "🏁", accent: "#2ECC71" },
+  social: { icon: "🥂", accent: "#5000C4" },
 };
 
 export function LiveBlogUpdate({ update }: LiveBlogUpdateProps): ReactNode {
@@ -21,7 +21,7 @@ export function LiveBlogUpdate({ update }: LiveBlogUpdateProps): ReactNode {
     minute: "2-digit",
   });
 
-  const isHighlight = update.type === "goal" || update.type === "halftime" || update.type === "fulltime";
+  const isHighlight = update.type === "keynote" || update.type === "milestone";
 
   return (
     <div
@@ -29,7 +29,7 @@ export function LiveBlogUpdate({ update }: LiveBlogUpdateProps): ReactNode {
         display: "flex",
         gap: "0.75rem",
         padding: "0.75rem 1rem",
-        background: isHighlight ? "#1a1b23" : "transparent",
+        background: isHighlight ? "#12121c" : "transparent",
         borderRadius: "0.375rem",
         borderLeft: `3px solid ${style.accent}`,
       }}
@@ -40,7 +40,7 @@ export function LiveBlogUpdate({ update }: LiveBlogUpdateProps): ReactNode {
         style={{
           minWidth: 60,
           fontSize: "0.75rem",
-          color: "#71717a",
+          color: "#5e5e72",
           paddingTop: 2,
         }}
       >
@@ -69,7 +69,7 @@ export function LiveBlogUpdate({ update }: LiveBlogUpdateProps): ReactNode {
           </span>
         </div>
         <p style={{ fontSize: "0.9rem", lineHeight: 1.5 }}>{update.content}</p>
-        <span style={{ fontSize: "0.7rem", color: "#71717a" }}>
+        <span style={{ fontSize: "0.7rem", color: "#5e5e72" }}>
           {update.author}
         </span>
       </div>

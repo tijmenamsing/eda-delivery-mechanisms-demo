@@ -1,4 +1,4 @@
-import type { ArticlePublishedEvent, UpdatePostedEvent } from "@newswire/types/events";
+import type { ArticlePublishedEvent, UpdatePostedEvent } from "@bbtg-news/types/events";
 
 export type DomainEvent = ArticlePublishedEvent | UpdatePostedEvent;
 

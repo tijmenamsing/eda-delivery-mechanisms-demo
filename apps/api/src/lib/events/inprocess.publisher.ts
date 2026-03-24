@@ -1,4 +1,4 @@
-import { REDIS_CHANNELS } from "@newswire/types/constants";
+import { REDIS_CHANNELS } from "@bbtg-news/types/constants";
 import type { EventPublisher, DomainEvent } from "./publisher.interface.js";
 import { getRedisClient } from "../redis.js";
 import { logger } from "../logger.js";

@@ -53,12 +53,12 @@ describe("Blogs routes", () => {
       const blogs = [
         {
           blogId: "1",
-          title: "Ajax vs PSV",
-          matchHomeTeam: "Ajax",
-          matchAwayTeam: "PSV",
-          matchDate: "2024-03-15",
+          title: "Live: BBTG Kennisfestival 2026",
+          eventName: "BBTG Kennisfestival 2026",
+          eventDate: "2026-04-15",
+          eventLocation: "Leusden",
           status: "active",
-          createdAt: "2024-03-15T00:00:00.000Z",
+          createdAt: "2026-04-15T00:00:00.000Z",
         },
       ];
       mockScanItems.mockResolvedValue(blogs);
@@ -66,7 +66,7 @@ describe("Blogs routes", () => {
       const res = await request(app).get("/blogs").expect(200);
 
       expect(res.body.blogs).toHaveLength(1);
-      expect(res.body.blogs[0].title).toBe("Ajax vs PSV");
+      expect(res.body.blogs[0].title).toBe("Live: BBTG Kennisfestival 2026");
     });
   });
 
@@ -74,22 +74,22 @@ describe("Blogs routes", () => {
     it("returns blog with updates", async () => {
       const blog = {
         blogId: "1",
-        title: "Ajax vs PSV",
-        matchHomeTeam: "Ajax",
-        matchAwayTeam: "PSV",
-        matchDate: "2024-03-15",
+        title: "Live: BBTG Kennisfestival 2026",
+        eventName: "BBTG Kennisfestival 2026",
+        eventDate: "2026-04-15",
+        eventLocation: "Leusden",
         status: "active",
-        createdAt: "2024-03-15T00:00:00.000Z",
+        createdAt: "2026-04-15T00:00:00.000Z",
       };
       const updates = [
         {
           updateId: "u1",
           blogId: "1",
-          content: "Kick off!",
+          content: "Welkom bij het BBTG Kennisfestival!",
           author: "Reporter",
           minute: 0,
           type: "commentary",
-          postedAt: "2024-03-15T15:00:00.000Z",
+          postedAt: "2026-04-15T09:00:00.000Z",
         },
       ];
       mockGetItem.mockResolvedValue(blog);
@@ -97,7 +97,7 @@ describe("Blogs routes", () => {
 
       const res = await request(app).get("/blogs/1").expect(200);
 
-      expect(res.body.blog.title).toBe("Ajax vs PSV");
+      expect(res.body.blog.title).toBe("Live: BBTG Kennisfestival 2026");
       expect(res.body.updates).toHaveLength(1);
     });
 

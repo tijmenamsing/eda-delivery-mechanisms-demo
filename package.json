@@ -1,5 +1,5 @@
 {
-  "name": "newswire",
+  "name": "bbtg-news",
   "private": true,
   "scripts": {
     "dev": "turbo run dev --parallel",

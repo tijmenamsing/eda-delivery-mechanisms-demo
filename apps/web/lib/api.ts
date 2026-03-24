@@ -1,4 +1,4 @@
-import type { Article, Blog, BlogUpdate } from "@newswire/types/models";
+import type { Article, Blog, BlogUpdate } from "@bbtg-news/types/models";
 import type {
   GetArticlesResponse,
   GetBlogsResponse,
@@ -7,7 +7,7 @@ import type {
   PostArticleResponse,
   PostUpdateRequest,
   PostUpdateResponse,
-} from "@newswire/types/api";
+} from "@bbtg-news/types/api";
 
 const API_URL = process.env["NEXT_PUBLIC_API_URL"] ?? process.env["API_URL"] ?? "http://localhost:3001";
 

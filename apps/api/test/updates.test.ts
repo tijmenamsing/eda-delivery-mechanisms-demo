@@ -38,10 +38,10 @@ vi.mock("../src/lib/logger.js", () => ({
 
 const validUpdate = {
   blogId: "550e8400-e29b-41d4-a716-446655440000",
-  content: "Goal! Ajax 1-0 PSV",
-  author: "Reporter",
-  minute: 23,
-  type: "goal" as const,
+  content: "De keynote over cloud soevereiniteit is begonnen!",
+  author: "BBTG Redactie",
+  minute: null,
+  type: "keynote" as const,
 };
 
 describe("Updates routes", () => {
@@ -72,8 +72,8 @@ describe("Updates routes", () => {
         .expect(201);
 
       expect(res.body.update).toBeDefined();
-      expect(res.body.update.content).toBe("Goal! Ajax 1-0 PSV");
-      expect(res.body.update.type).toBe("goal");
+      expect(res.body.update.content).toBe("De keynote over cloud soevereiniteit is begonnen!");
+      expect(res.body.update.type).toBe("keynote");
       expect(mockPutItem).toHaveBeenCalledOnce();
       expect(mockPublisher.publish).toHaveBeenCalledOnce();
       expect(mockPublisher.publish).toHaveBeenCalledWith(

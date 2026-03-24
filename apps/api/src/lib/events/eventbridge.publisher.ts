@@ -19,7 +19,7 @@ export class EventBridgePublisher implements EventPublisher {
       new PutEventsCommand({
         Entries: [
           {
-            Source: "newswire.api",
+            Source: "bbtg-news.api",
             DetailType: event.type,
             Detail: JSON.stringify(event),
             EventBusName: busName,

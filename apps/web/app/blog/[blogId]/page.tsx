@@ -25,7 +25,7 @@ export default async function BlogPage({
   return (
     <main style={{ maxWidth: 800, margin: "0 auto", padding: "2rem 1rem" }}>
       <nav style={{ marginBottom: "1.5rem" }}>
-        <a href="/" style={{ fontSize: "0.875rem", color: "#a1a1aa" }}>
+        <a href="/" style={{ fontSize: "0.875rem", color: "#9898ab" }}>
           ← Terug naar overzicht
         </a>
       </nav>
@@ -34,12 +34,13 @@ export default async function BlogPage({
         <h1 style={{ fontSize: "1.75rem", fontWeight: 700, marginBottom: "0.5rem" }}>
           {blog.title}
         </h1>
-        <div style={{ display: "flex", gap: "1rem", color: "#a1a1aa", fontSize: "0.875rem" }}>
-          <span>⚽ {blog.matchHomeTeam} vs {blog.matchAwayTeam}</span>
-          <span>📅 {blog.matchDate}</span>
+        <div style={{ display: "flex", gap: "1rem", color: "#9898ab", fontSize: "0.875rem", flexWrap: "wrap" }}>
+          <span>📡 {blog.eventName}</span>
+          <span>📅 {blog.eventDate}</span>
+          <span>📍 {blog.eventLocation}</span>
           <span
             style={{
-              color: blog.status === "active" ? "#4ade80" : "#f87171",
+              color: blog.status === "active" ? "#2ECC71" : "#FF6B00",
               fontWeight: 600,
             }}
           >

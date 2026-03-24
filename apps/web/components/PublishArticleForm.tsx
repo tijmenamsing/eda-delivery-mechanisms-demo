@@ -7,10 +7,10 @@ import { publishArticle } from "@/lib/api";
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "0.625rem 0.75rem",
-  background: "#1a1b23",
-  border: "1px solid #27272a",
+  background: "#12121c",
+  border: "1px solid #1e1e2e",
   borderRadius: "0.375rem",
-  color: "#e4e4e7",
+  color: "#e8e8ef",
   fontSize: "0.9rem",
   fontFamily: "inherit",
 };
@@ -19,7 +19,7 @@ const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: "0.8rem",
   fontWeight: 600,
-  color: "#a1a1aa",
+  color: "#9898ab",
   marginBottom: "0.375rem",
 };
 
@@ -53,9 +53,9 @@ export function PublishArticleForm(): ReactNode {
       onSubmit={handleSubmit}
       style={{
         padding: "1.5rem",
-        background: "#1a1b23",
+        background: "#12121c",
         borderRadius: "0.5rem",
-        border: "1px solid #27272a",
+        border: "1px solid #1e1e2e",
       }}
     >
       <h3 style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: "1.25rem" }}>
@@ -68,7 +68,7 @@ export function PublishArticleForm(): ReactNode {
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Ajax wint topper..."
+          placeholder="BBTG kondigt nieuwe samenwerking aan..."
           required
           style={inputStyle}
         />
@@ -92,7 +92,7 @@ export function PublishArticleForm(): ReactNode {
           type="text"
           value={author}
           onChange={(e) => setAuthor(e.target.value)}
-          placeholder="Jan de Vries"
+          placeholder="BBTG Redactie"
           required
           style={inputStyle}
         />
@@ -103,7 +103,7 @@ export function PublishArticleForm(): ReactNode {
         disabled={status === "loading"}
         style={{
           padding: "0.625rem 1.5rem",
-          background: "#3b82f6",
+          background: "#5000C4",
           color: "white",
           border: "none",
           borderRadius: "0.375rem",
@@ -123,9 +123,9 @@ export function PublishArticleForm(): ReactNode {
             marginTop: "1rem",
             padding: "0.75rem",
             borderRadius: "0.375rem",
-            background: status === "success" ? "#052e16" : "#450a0a",
-            border: `1px solid ${status === "success" ? "#166534" : "#991b1b"}`,
-            color: status === "success" ? "#4ade80" : "#f87171",
+            background: status === "success" ? "#0a1f12" : "#2a0a00",
+            border: `1px solid ${status === "success" ? "#1a4a2a" : "#8a3000"}`,
+            color: status === "success" ? "#2ECC71" : "#FF6B00",
             fontSize: "0.85rem",
           }}
         >

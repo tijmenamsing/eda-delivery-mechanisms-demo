@@ -3,7 +3,7 @@ import { env } from "./env.js";
 
 const options: LoggerOptions = {
   level: env.NODE_ENV === "production" ? "info" : "debug",
-  base: { service: "@newswire/api" },
+  base: { service: "@bbtg-news/api" },
   timestamp: pino.stdTimeFunctions.isoTime,
 };
 

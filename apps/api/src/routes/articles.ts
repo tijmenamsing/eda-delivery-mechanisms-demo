@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { randomUUID } from "node:crypto";
-import { PostArticleRequestSchema } from "@newswire/types/api";
-import type { Article } from "@newswire/types/models";
-import type { ArticlePublishedEvent } from "@newswire/types/events";
+import { PostArticleRequestSchema } from "@bbtg-news/types/api";
+import type { Article } from "@bbtg-news/types/models";
+import type { ArticlePublishedEvent } from "@bbtg-news/types/events";
 import type { EventPublisher } from "../lib/events/publisher.interface.js";
 import { putItem, scanItems } from "../lib/dynamo.js";
 import { env } from "../lib/env.js";

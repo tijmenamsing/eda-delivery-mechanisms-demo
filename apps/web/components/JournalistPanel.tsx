@@ -12,10 +12,10 @@ export function JournalistPanel(): ReactNode {
 
   const tabStyle = (tab: Tab): React.CSSProperties => ({
     padding: "0.5rem 1.25rem",
-    background: activeTab === tab ? "#27272a" : "transparent",
-    color: activeTab === tab ? "#e4e4e7" : "#71717a",
+    background: activeTab === tab ? "#1e1e2e" : "transparent",
+    color: activeTab === tab ? "#e8e8ef" : "#5e5e72",
     border: "1px solid",
-    borderColor: activeTab === tab ? "#3f3f46" : "transparent",
+    borderColor: activeTab === tab ? "#2a2a3e" : "transparent",
     borderRadius: "0.375rem",
     cursor: "pointer",
     fontSize: "0.9rem",

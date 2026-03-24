@@ -1,4 +1,4 @@
-import type { Article } from "@newswire/types/models";
+import type { Article } from "@bbtg-news/types/models";
 import type { ReactNode } from "react";
 import { ArticleCard } from "./ArticleCard";
 
@@ -13,13 +13,13 @@ export function ArticleList({ articles }: ArticleListProps): ReactNode {
         style={{
           textAlign: "center",
           padding: "3rem 1rem",
-          color: "#71717a",
+          color: "#5e5e72",
         }}
       >
         <p>Nog geen artikelen gepubliceerd.</p>
         <p style={{ fontSize: "0.875rem", marginTop: "0.5rem" }}>
           Ga naar het{" "}
-          <a href="/journalist">journalist panel</a> om een artikel te publiceren.
+          <a href="/journalist">redactiepanel</a> om een artikel te publiceren.
         </p>
       </div>
     );

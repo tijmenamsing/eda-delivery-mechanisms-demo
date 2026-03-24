@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { BlogUpdate } from "@newswire/types/models";
+import type { BlogUpdate } from "@bbtg-news/types/models";
 import { useLiveBlog } from "@/hooks/useLiveBlog";
 import { LiveBlogUpdate } from "./LiveBlogUpdate";
 
@@ -26,9 +26,9 @@ export function LiveBlog({ blogId, initialUpdates }: LiveBlogProps): ReactNode {
           gap: "0.5rem",
           marginBottom: "1.5rem",
           padding: "0.5rem 0.75rem",
-          background: "#1a1b23",
+          background: "#12121c",
           borderRadius: "0.375rem",
-          border: "1px solid #27272a",
+          border: "1px solid #1e1e2e",
           fontSize: "0.8rem",
         }}
       >
@@ -37,22 +37,22 @@ export function LiveBlog({ blogId, initialUpdates }: LiveBlogProps): ReactNode {
             width: 8,
             height: 8,
             borderRadius: "50%",
-            background: isConnected ? "#4ade80" : "#f87171",
+            background: isConnected ? "#2ECC71" : "#FF6B00",
             display: "inline-block",
           }}
         />
-        <span style={{ color: isConnected ? "#4ade80" : "#f87171" }}>
+        <span style={{ color: isConnected ? "#2ECC71" : "#FF6B00" }}>
           {isConnected ? "Live verbonden via SSE" : "Verbinding verbroken — herverbinden..."}
         </span>
         {error && (
-          <span style={{ color: "#f87171", marginLeft: "auto" }}>{error}</span>
+          <span style={{ color: "#FF6B00", marginLeft: "auto" }}>{error}</span>
         )}
       </div>
 
       {/* Updates feed */}
       <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
         {updates.length === 0 ? (
-          <p style={{ color: "#71717a", textAlign: "center", padding: "2rem 0" }}>
+          <p style={{ color: "#5e5e72", textAlign: "center", padding: "2rem 0" }}>
             Nog geen updates...
           </p>
         ) : (

@@ -16,9 +16,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NewsWire — Live News Platform",
+  title: "BBTG Nieuws — Event-Driven Delivery Demo",
   description:
-    "A demo platform showing event-driven delivery mechanisms for digital news",
+    "Demonstratie van event-driven delivery mechanisms voor digitaal nieuws — BBTG Kennisfestival 2026",
 };
 
 export default function RootLayout({
