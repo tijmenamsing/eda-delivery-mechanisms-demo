@@ -6,6 +6,7 @@ import * as elb from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as events from "aws-cdk-lib/aws-events";
 import * as logs from "aws-cdk-lib/aws-logs";
+import { Platform } from "aws-cdk-lib/aws-ecr-assets";
 import type { Construct } from "constructs";
 
 export interface SseServiceProps {
@@ -58,7 +59,7 @@ export class SseService extends cdk.Resource {
     const container = taskDef.addContainer("api", {
       image: ecs.ContainerImage.fromAsset(
         path.join(__dirname, "../../.."),
-        { file: "apps/api/Dockerfile" },
+        { file: "apps/api/Dockerfile", platform: Platform.LINUX_AMD64 },
       ),
       logging: ecs.LogDrivers.awsLogs({
         streamPrefix: "sse",
