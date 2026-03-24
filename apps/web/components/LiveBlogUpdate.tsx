@@ -5,13 +5,13 @@ interface LiveBlogUpdateProps {
   update: BlogUpdate;
 }
 
-const typeStyles: Record<BlogUpdate["type"], { icon: string; accent: string }> = {
-  keynote: { icon: "🎤", accent: "#FF6B00" },
-  session: { icon: "📚", accent: "#64D5FF" },
-  break: { icon: "☕", accent: "#F19A16" },
-  commentary: { icon: "💬", accent: "rgba(255,255,255,0.5)" },
-  milestone: { icon: "🏁", accent: "#2ECC71" },
-  social: { icon: "🥂", accent: "#c084fc" },
+const typeStyles: Record<BlogUpdate["type"], { icon: string; accent: string; label: string }> = {
+  keynote: { icon: "🎤", accent: "#FF6B00", label: "Keynote" },
+  session: { icon: "📚", accent: "#64D5FF", label: "Sessie" },
+  break: { icon: "☕", accent: "#F19A16", label: "Pauze" },
+  commentary: { icon: "💬", accent: "rgba(255,255,255,0.5)", label: "Verslag" },
+  milestone: { icon: "🏁", accent: "#2ECC71", label: "Mijlpaal" },
+  social: { icon: "🥂", accent: "#c084fc", label: "Sociaal" },
 };
 
 export function LiveBlogUpdate({ update }: LiveBlogUpdateProps): ReactNode {
@@ -65,7 +65,7 @@ export function LiveBlogUpdate({ update }: LiveBlogUpdateProps): ReactNode {
               letterSpacing: "0.05em",
             }}
           >
-            {update.type}
+            {style.label}
           </span>
         </div>
         <p style={{ fontSize: "0.9rem", lineHeight: 1.5, color: "#fff" }}>{update.content}</p>
