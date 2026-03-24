@@ -10,7 +10,7 @@
     "deploy": "pnpm build && cd infra && pnpm deploy",
     "destroy": "cd infra && pnpm destroy",
     "cdk:synth": "cd infra && pnpm synth",
-    "cdk:bootstrap": "cd infra && npx cdk bootstrap aws://870456164660/eu-west-1 --profile personal",
+    "cdk:bootstrap": "cd infra && npx cdk bootstrap aws://870456164660/eu-west-1 --profile personal -c environment=dev -c awsAccountId=870456164660 -c awsRegion=eu-west-1",
     "infra:up": "docker-compose up -d",
     "infra:down": "docker-compose down",
     "db:init": "tsx scripts/init-local.ts",
