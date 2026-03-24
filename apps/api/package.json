@@ -21,6 +21,7 @@
     "ioredis": "^5.4.0",
     "pino": "^9.6.0",
     "pino-http": "^10.4.0",
+    "serverless-http": "^3.2.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {

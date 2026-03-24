@@ -4,10 +4,30 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./constants": "./src/constants.ts",
-    "./models": "./src/models.ts",
-    "./events": "./src/events.ts",
-    "./api": "./src/api.ts"
+    "./constants": {
+      "types": "./src/constants.ts",
+      "default": "./dist/constants.js"
+    },
+    "./models": {
+      "types": "./src/models.ts",
+      "default": "./dist/models.js"
+    },
+    "./events": {
+      "types": "./src/events.ts",
+      "default": "./dist/events.js"
+    },
+    "./api": {
+      "types": "./src/api.ts",
+      "default": "./dist/api.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "constants": ["src/constants.ts"],
+      "models": ["src/models.ts"],
+      "events": ["src/events.ts"],
+      "api": ["src/api.ts"]
+    }
   },
   "scripts": {
     "build": "tsc",
