@@ -54,10 +54,13 @@ const apiStack = new ApiStack(app, `${prefix}-api`, {
   redisCluster: dataStack.redisCluster,
 });
 
-new FrontendStack(app, `${prefix}-frontend`, {
+const frontendStack = new FrontendStack(app, `${prefix}-frontend`, {
   env: cdkEnv,
   tags,
   environment,
   apiGatewayUrl: cdk.Fn.importValue(`${environment}-bbtg-api-gateway-url`),
   albDnsName: cdk.Fn.importValue(`${environment}-bbtg-alb-dns-name`),
 });
+
+// Ensure API stack is fully deployed (with exports) before frontend stack
+frontendStack.addDependency(apiStack);
