@@ -52,6 +52,9 @@ export class FrontendStack extends cdk.Stack {
     const distribution = new cloudfront.Distribution(this, "Distribution", {
       comment: `BBTG Nieuws (${props.environment})`,
       defaultRootObject: "index.html",
+      // PriceClass_100 covers North America + Europe — sufficient for this demo
+      // and significantly cheaper than the default (all edge locations worldwide).
+      priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
 
       defaultBehavior: {
         origin: origins.S3BucketOrigin.withOriginAccessControl(websiteBucket),

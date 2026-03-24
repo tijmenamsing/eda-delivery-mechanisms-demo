@@ -40,7 +40,7 @@ export class AuthoringFunction extends cdk.Resource {
       handler: "handler",
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.ARM_64,
-      memorySize: 512,
+      memorySize: 256,
       timeout: cdk.Duration.seconds(29),
       vpc: props.vpc,
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
