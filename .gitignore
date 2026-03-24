@@ -140,3 +140,6 @@ vite.config.ts.timestamp-*
 
 # Turborepo cache
 .turbo/
+
+# CDK
+cdk.out

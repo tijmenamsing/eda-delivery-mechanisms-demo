@@ -54,7 +54,7 @@ export async function fetchBlogDetail(
   blogId: string,
 ): Promise<{ blog: Blog; updates: BlogUpdate[] }> {
   const res = await fetch(`${API_URL}/blogs/${blogId}`, {
-    cache: "no-store",
+    next: { revalidate: 60 },
   });
   if (!res.ok) {
     throw new Error(`Failed to fetch blog: ${res.status}`);
