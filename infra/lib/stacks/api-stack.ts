@@ -153,8 +153,14 @@ export class ApiStack extends cdk.Stack {
 
     this.albDnsName = sseService.loadBalancerDnsName;
 
-    new cdk.CfnOutput(this, "ApiGatewayUrl", { value: this.apiGatewayUrl });
-    new cdk.CfnOutput(this, "AlbDnsName", { value: this.albDnsName });
+    new cdk.CfnOutput(this, "ApiGatewayUrl", {
+      value: this.apiGatewayUrl,
+      exportName: `${props.environment}-bbtg-api-gateway-url`,
+    });
+    new cdk.CfnOutput(this, "AlbDnsName", {
+      value: this.albDnsName,
+      exportName: `${props.environment}-bbtg-alb-dns-name`,
+    });
     new cdk.CfnOutput(this, "EventBusName", { value: eventBus.eventBusName });
   }
 }

@@ -58,6 +58,6 @@ new FrontendStack(app, `${prefix}-frontend`, {
   env: cdkEnv,
   tags,
   environment,
-  apiGatewayUrl: apiStack.apiGatewayUrl,
-  albDnsName: apiStack.albDnsName,
+  apiGatewayUrl: cdk.Fn.importValue(`${environment}-bbtg-api-gateway-url`),
+  albDnsName: cdk.Fn.importValue(`${environment}-bbtg-alb-dns-name`),
 });
