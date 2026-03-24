@@ -6,7 +6,8 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "declaration": false,
-    "declarationMap": false
+    "declarationMap": false,
+    "exactOptionalPropertyTypes": false
   },
   "include": ["bin", "lib", "test"]
 }
