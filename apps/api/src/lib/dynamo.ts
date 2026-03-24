@@ -13,10 +13,11 @@ import { env } from "./env.js";
 
 const clientConfig: DynamoDBClientConfig = {
   region: env.AWS_REGION,
-  credentials: {
-    accessKeyId: env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
-  },
+  // Only pass explicit credentials in local dev (LocalStack).
+  // On ECS/Lambda the SDK resolves credentials from the task role automatically.
+  ...(env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY
+    ? { credentials: { accessKeyId: env.AWS_ACCESS_KEY_ID, secretAccessKey: env.AWS_SECRET_ACCESS_KEY } }
+    : {}),
   ...(env.DYNAMODB_ENDPOINT ? { endpoint: env.DYNAMODB_ENDPOINT } : {}),
 };
 

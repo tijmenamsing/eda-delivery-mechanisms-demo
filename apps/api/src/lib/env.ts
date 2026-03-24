@@ -6,8 +6,10 @@ const envSchema = z.object({
     .default("development"),
   PORT: z.coerce.number().int().positive().default(3001),
   AWS_REGION: z.string().min(1),
-  AWS_ACCESS_KEY_ID: z.string().min(1),
-  AWS_SECRET_ACCESS_KEY: z.string().min(1),
+  // Optional: only needed for local dev (LocalStack). On ECS/Lambda the
+  // task/execution role provides credentials via the metadata service.
+  AWS_ACCESS_KEY_ID: z.string().min(1).optional(),
+  AWS_SECRET_ACCESS_KEY: z.string().min(1).optional(),
   DYNAMODB_ENDPOINT: z.string().url().optional(),
   REDIS_URL: z.string().min(1),
   ARTICLES_TABLE: z.string().min(1),
