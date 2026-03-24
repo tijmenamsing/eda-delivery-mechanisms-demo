@@ -49,6 +49,30 @@ export class FrontendStack extends cdk.Stack {
     // to the ALB. CloudFront buffers responses which breaks SSE.
     // ------------------------------------------------------------------ //
 
+    // CloudFront Function: rewrite clean URLs to index.html.
+    // S3 (via OAC) serves objects by exact key — it does NOT resolve directory
+    // index files like S3 website hosting does. So /journalist → 403 because
+    // there is no object at that key. We rewrite:
+    //   /journalist        → /journalist/index.html
+    //   /journalist/       → /journalist/index.html
+    //   /blog/abc          → /blog/abc/index.html
+    // Requests that already have a file extension are left untouched.
+    const rewriteFn = new cloudfront.Function(this, "RewriteFn", {
+      code: cloudfront.FunctionCode.fromInline(`
+function handler(event) {
+  var uri = event.request.uri;
+  if (uri.endsWith('/')) {
+    event.request.uri = uri + 'index.html';
+  } else if (!uri.split('/').pop().includes('.')) {
+    event.request.uri = uri + '/index.html';
+  }
+  return event.request;
+}
+      `.trim()),
+      runtime: cloudfront.FunctionRuntime.JS_2_0,
+      comment: "Rewrite clean URLs to /index.html for S3 static export",
+    });
+
     const distribution = new cloudfront.Distribution(this, "Distribution", {
       comment: `BBTG Nieuws (${props.environment})`,
       defaultRootObject: "index.html",
@@ -61,6 +85,12 @@ export class FrontendStack extends cdk.Stack {
         viewerProtocolPolicy:
           cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+        functionAssociations: [
+          {
+            function: rewriteFn,
+            eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
+          },
+        ],
       },
 
       additionalBehaviors: {
