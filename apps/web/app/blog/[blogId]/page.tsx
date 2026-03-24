@@ -25,16 +25,16 @@ export default async function BlogPage({
   return (
     <main style={{ maxWidth: 800, margin: "0 auto", padding: "2rem 1rem" }}>
       <nav style={{ marginBottom: "1.5rem" }}>
-        <a href="/" style={{ fontSize: "0.875rem", color: "#9898ab" }}>
+        <a href="/" style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.7)" }}>
           ← Terug naar overzicht
         </a>
       </nav>
 
       <header style={{ marginBottom: "1.5rem" }}>
-        <h1 style={{ fontSize: "1.75rem", fontWeight: 700, marginBottom: "0.5rem" }}>
+        <h1 style={{ fontSize: "1.75rem", fontWeight: 900, marginBottom: "0.5rem", color: "#fff" }}>
           {blog.title}
         </h1>
-        <div style={{ display: "flex", gap: "1rem", color: "#9898ab", fontSize: "0.875rem", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "1rem", color: "rgba(255,255,255,0.7)", fontSize: "0.875rem", flexWrap: "wrap" }}>
           <span>📡 {blog.eventName}</span>
           <span>📅 {blog.eventDate}</span>
           <span>📍 {blog.eventLocation}</span>

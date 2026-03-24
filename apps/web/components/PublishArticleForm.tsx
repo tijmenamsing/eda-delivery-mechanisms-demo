@@ -7,10 +7,10 @@ import { publishArticle } from "@/lib/api";
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "0.625rem 0.75rem",
-  background: "#12121c",
-  border: "1px solid #1e1e2e",
-  borderRadius: "0.375rem",
-  color: "#e8e8ef",
+  background: "rgba(0, 0, 0, 0.2)",
+  border: "1px solid rgba(255,255,255,0.15)",
+  borderRadius: 10,
+  color: "#fff",
   fontSize: "0.9rem",
   fontFamily: "inherit",
 };
@@ -19,7 +19,7 @@ const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: "0.8rem",
   fontWeight: 600,
-  color: "#9898ab",
+  color: "rgba(255,255,255,0.7)",
   marginBottom: "0.375rem",
 };
 
@@ -53,12 +53,14 @@ export function PublishArticleForm(): ReactNode {
       onSubmit={handleSubmit}
       style={{
         padding: "1.5rem",
-        background: "#12121c",
-        borderRadius: "0.5rem",
-        border: "1px solid #1e1e2e",
+        background: "rgba(0, 0, 0, 0.18)",
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
+        borderRadius: 20,
+        boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
       }}
     >
-      <h3 style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: "1.25rem" }}>
+      <h3 style={{ fontSize: "1.1rem", fontWeight: 900, marginBottom: "1.25rem", color: "#fff" }}>
         Nieuw artikel
       </h3>
 
@@ -103,13 +105,13 @@ export function PublishArticleForm(): ReactNode {
         disabled={status === "loading"}
         style={{
           padding: "0.625rem 1.5rem",
-          background: "#5000C4",
-          color: "white",
+          background: "#FF6B00",
+          color: "#fff",
           border: "none",
-          borderRadius: "0.375rem",
+          borderRadius: 10,
           cursor: status === "loading" ? "wait" : "pointer",
           fontSize: "0.9rem",
-          fontWeight: 600,
+          fontWeight: 700,
           fontFamily: "inherit",
           opacity: status === "loading" ? 0.7 : 1,
         }}
@@ -122,9 +124,9 @@ export function PublishArticleForm(): ReactNode {
           style={{
             marginTop: "1rem",
             padding: "0.75rem",
-            borderRadius: "0.375rem",
-            background: status === "success" ? "#0a1f12" : "#2a0a00",
-            border: `1px solid ${status === "success" ? "#1a4a2a" : "#8a3000"}`,
+            borderRadius: 10,
+            background: status === "success" ? "rgba(46,204,113,0.15)" : "rgba(255,107,0,0.15)",
+            border: `1px solid ${status === "success" ? "rgba(46,204,113,0.3)" : "rgba(255,107,0,0.3)"}`,
             color: status === "success" ? "#2ECC71" : "#FF6B00",
             fontSize: "0.85rem",
           }}

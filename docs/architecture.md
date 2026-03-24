@@ -2,10 +2,10 @@
 
 ## Overview
 
-NewsWire is a digital news platform demonstrating two real-time delivery patterns in an event-driven architecture:
+BBTG Nieuws is a digital news platform demonstrating two real-time delivery patterns in an event-driven architecture:
 
-1. **Homepage (polling)** — Articles are displayed via Next.js ISR with a 60-second revalidation interval
-2. **Live blog (SSE)** — Match updates are pushed in real-time via Server-Sent Events through Redis pub/sub
+1. **Homepage (polling)** — Articles are displayed via Next.js with client-side polling every 10 seconds
+2. **Live blog (SSE)** — Event updates are pushed in real-time via Server-Sent Events through Redis pub/sub
 
 ## Key Design Decisions
 

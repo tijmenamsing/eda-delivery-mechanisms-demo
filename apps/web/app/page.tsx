@@ -22,12 +22,15 @@ export default async function HomePage(): Promise<ReactNode> {
 
   return (
     <main style={{ maxWidth: 800, margin: "0 auto", padding: "2rem 1rem" }}>
-      <header style={{ marginBottom: "2rem" }}>
-        <h1 style={{ fontSize: "2rem", fontWeight: 700, marginBottom: "0.25rem" }}>
-          BBTG Nieuws
-        </h1>
-        <p style={{ color: "#9898ab", fontSize: "0.875rem" }}>
-          Digitaal nieuwsplatform — Demonstratie event-driven delivery
+      <header style={{ marginBottom: "2rem", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "0.25rem" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="https://bbtg.com/assets/bbtg-logo-550x190-f846a0b3.png"
+          alt="BBTG"
+          style={{ height: 50 }}
+        />
+        <p style={{ color: "#fff", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.15em", fontWeight: 700, marginTop: "0.25rem" }}>
+          News &amp; Stories
         </p>
       </header>
 
@@ -37,12 +40,14 @@ export default async function HomePage(): Promise<ReactNode> {
           style={{
             marginBottom: "1.5rem",
             padding: "1rem",
-            background: "#12121c",
-            borderRadius: "0.5rem",
-            border: "1px solid #1e1e2e",
+            background: "rgba(0, 0, 0, 0.18)",
+            backdropFilter: "blur(14px)",
+            WebkitBackdropFilter: "blur(14px)",
+            borderRadius: 20,
+            boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
           }}
         >
-          <h2 style={{ fontSize: "0.9rem", fontWeight: 600, marginBottom: "0.75rem", color: "#e8e8ef" }}>
+          <h2 style={{ fontSize: "0.9rem", fontWeight: 900, marginBottom: "0.75rem", color: "#fff" }}>
             ⚡ Live blogs
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
@@ -55,11 +60,10 @@ export default async function HomePage(): Promise<ReactNode> {
                   justifyContent: "space-between",
                   alignItems: "center",
                   padding: "0.5rem 0.75rem",
-                  background: "#0a0a12",
-                  borderRadius: "0.375rem",
-                  border: "1px solid #1e1e2e",
+                  background: "rgba(0, 0, 0, 0.12)",
+                  borderRadius: 12,
                   textDecoration: "none",
-                  color: "#e8e8ef",
+                  color: "#fff",
                 }}
               >
                 <span style={{ fontSize: "0.875rem" }}>
@@ -69,7 +73,7 @@ export default async function HomePage(): Promise<ReactNode> {
                   style={{
                     fontSize: "0.7rem",
                     fontWeight: 600,
-                    color: blog.status === "active" ? "#2ECC71" : "#5e5e72",
+                    color: blog.status === "active" ? "#2ECC71" : "rgba(255,255,255,0.5)",
                   }}
                 >
                   {blog.status === "active" ? "🔴 LIVE" : "Afgelopen"}
@@ -82,8 +86,8 @@ export default async function HomePage(): Promise<ReactNode> {
 
       <PollingArticleList initialArticles={articles} />
 
-      <nav style={{ marginTop: "2rem", padding: "1rem 0", borderTop: "1px solid #1e1e2e" }}>
-        <a href="/journalist" style={{ marginRight: "1.5rem" }}>
+      <nav style={{ marginTop: "2rem", padding: "1rem 0" }}>
+        <a href="/journalist" style={{ marginRight: "1.5rem", color: "#fff" }}>
           ✏️ Redactiepanel
         </a>
       </nav>

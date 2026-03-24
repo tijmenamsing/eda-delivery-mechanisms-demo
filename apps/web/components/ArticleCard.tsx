@@ -20,19 +20,21 @@ export function ArticleCard({ article }: ArticleCardProps): ReactNode {
   return (
     <article
       style={{
-        padding: "1.25rem",
-        background: "#12121c",
-        borderRadius: "0.5rem",
-        border: "1px solid #1e1e2e",
+        padding: "1.5rem",
+        background: "rgba(0, 0, 0, 0.18)",
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
+        borderRadius: 20,
+        boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
       }}
     >
-      <h2 style={{ fontSize: "1.25rem", fontWeight: 600, marginBottom: "0.5rem" }}>
+      <h2 style={{ fontSize: "1.375rem", fontWeight: 900, marginBottom: "0.5rem", color: "#fff", textTransform: "none" }}>
         {article.title}
       </h2>
       <p
         style={{
-          color: "#9898ab",
-          fontSize: "0.875rem",
+          color: "rgba(255,255,255,0.85)",
+          fontSize: "1rem",
           lineHeight: 1.6,
           marginBottom: "0.75rem",
         }}
@@ -44,7 +46,7 @@ export function ArticleCard({ article }: ArticleCardProps): ReactNode {
           display: "flex",
           justifyContent: "space-between",
           fontSize: "0.75rem",
-          color: "#5e5e72",
+          color: "rgba(255,255,255,0.5)",
         }}
       >
         <span>Door {article.author}</span>

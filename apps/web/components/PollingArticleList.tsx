@@ -76,12 +76,14 @@ export function PollingArticleList({
           alignItems: "center",
           marginBottom: "1.5rem",
           padding: "0.75rem 1rem",
-          background: "#12121c",
-          borderRadius: "0.5rem",
-          border: "1px solid #1e1e2e",
+          background: "rgba(0, 0, 0, 0.18)",
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
+          borderRadius: 20,
+          boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
         }}
       >
-        <span style={{ fontSize: "0.8rem", color: "#9898ab" }}>
+        <span style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.7)" }}>
           🔄 Volgende poll over{" "}
           <span
             className="mono"
@@ -92,7 +94,7 @@ export function PollingArticleList({
         </span>
         <span
           className="mono"
-          style={{ fontSize: "0.75rem", color: "#64D5FF" }}
+          style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.7)" }}
           suppressHydrationWarning
         >
           Laatste update: {formattedTime}

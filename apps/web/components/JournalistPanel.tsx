@@ -12,14 +12,15 @@ export function JournalistPanel(): ReactNode {
 
   const tabStyle = (tab: Tab): React.CSSProperties => ({
     padding: "0.5rem 1.25rem",
-    background: activeTab === tab ? "#1e1e2e" : "transparent",
-    color: activeTab === tab ? "#e8e8ef" : "#5e5e72",
-    border: "1px solid",
-    borderColor: activeTab === tab ? "#2a2a3e" : "transparent",
-    borderRadius: "0.375rem",
+    background: activeTab === tab ? "rgba(0, 0, 0, 0.25)" : "transparent",
+    backdropFilter: activeTab === tab ? "blur(14px)" : undefined,
+    WebkitBackdropFilter: activeTab === tab ? "blur(14px)" : undefined,
+    color: activeTab === tab ? "#fff" : "rgba(255,255,255,0.5)",
+    border: "none",
+    borderRadius: 12,
     cursor: "pointer",
     fontSize: "0.9rem",
-    fontWeight: activeTab === tab ? 600 : 400,
+    fontWeight: activeTab === tab ? 700 : 400,
     fontFamily: "inherit",
   });
 

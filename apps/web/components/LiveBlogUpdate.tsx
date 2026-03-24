@@ -9,9 +9,9 @@ const typeStyles: Record<BlogUpdate["type"], { icon: string; accent: string }> =
   keynote: { icon: "🎤", accent: "#FF6B00" },
   session: { icon: "📚", accent: "#64D5FF" },
   break: { icon: "☕", accent: "#F19A16" },
-  commentary: { icon: "💬", accent: "#9898ab" },
+  commentary: { icon: "💬", accent: "rgba(255,255,255,0.5)" },
   milestone: { icon: "🏁", accent: "#2ECC71" },
-  social: { icon: "🥂", accent: "#5000C4" },
+  social: { icon: "🥂", accent: "#c084fc" },
 };
 
 export function LiveBlogUpdate({ update }: LiveBlogUpdateProps): ReactNode {
@@ -29,8 +29,8 @@ export function LiveBlogUpdate({ update }: LiveBlogUpdateProps): ReactNode {
         display: "flex",
         gap: "0.75rem",
         padding: "0.75rem 1rem",
-        background: isHighlight ? "#12121c" : "transparent",
-        borderRadius: "0.375rem",
+        background: isHighlight ? "rgba(0, 0, 0, 0.12)" : "transparent",
+        borderRadius: 12,
         borderLeft: `3px solid ${style.accent}`,
       }}
     >
@@ -40,7 +40,7 @@ export function LiveBlogUpdate({ update }: LiveBlogUpdateProps): ReactNode {
         style={{
           minWidth: 60,
           fontSize: "0.75rem",
-          color: "#5e5e72",
+          color: "rgba(255,255,255,0.5)",
           paddingTop: 2,
         }}
       >
@@ -68,8 +68,8 @@ export function LiveBlogUpdate({ update }: LiveBlogUpdateProps): ReactNode {
             {update.type}
           </span>
         </div>
-        <p style={{ fontSize: "0.9rem", lineHeight: 1.5 }}>{update.content}</p>
-        <span style={{ fontSize: "0.7rem", color: "#5e5e72" }}>
+        <p style={{ fontSize: "0.9rem", lineHeight: 1.5, color: "#fff" }}>{update.content}</p>
+        <span style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.5)" }}>
           {update.author}
         </span>
       </div>

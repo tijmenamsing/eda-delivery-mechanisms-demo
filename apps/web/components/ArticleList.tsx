@@ -13,7 +13,7 @@ export function ArticleList({ articles }: ArticleListProps): ReactNode {
         style={{
           textAlign: "center",
           padding: "3rem 1rem",
-          color: "#5e5e72",
+          color: "rgba(255,255,255,0.5)",
         }}
       >
         <p>Nog geen artikelen gepubliceerd.</p>

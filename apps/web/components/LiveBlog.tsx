@@ -26,9 +26,11 @@ export function LiveBlog({ blogId, initialUpdates }: LiveBlogProps): ReactNode {
           gap: "0.5rem",
           marginBottom: "1.5rem",
           padding: "0.5rem 0.75rem",
-          background: "#12121c",
-          borderRadius: "0.375rem",
-          border: "1px solid #1e1e2e",
+          background: "rgba(0, 0, 0, 0.18)",
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
+          borderRadius: 20,
+          boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
           fontSize: "0.8rem",
         }}
       >
@@ -52,7 +54,7 @@ export function LiveBlog({ blogId, initialUpdates }: LiveBlogProps): ReactNode {
       {/* Updates feed */}
       <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
         {updates.length === 0 ? (
-          <p style={{ color: "#5e5e72", textAlign: "center", padding: "2rem 0" }}>
+          <p style={{ color: "rgba(255,255,255,0.5)", textAlign: "center", padding: "2rem 0" }}>
             Nog geen updates...
           </p>
         ) : (

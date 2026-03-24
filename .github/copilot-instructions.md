@@ -10,7 +10,7 @@ Generate complete, working code for every file. No placeholders, no `// TODO`, n
 
 ## Overview
 
-Build the NewsWire demo application — a digital news platform demonstrating real-time delivery patterns in an event-driven architecture.
+Build the BBTG Nieuws demo application — a digital news platform demonstrating real-time delivery patterns in an event-driven architecture.
 
 **Two flows to implement:**
 
@@ -46,7 +46,7 @@ Create the following structure. Every file listed must be created.
 
 ### `package.json` (root)
 
-- `"name": "newswire"`
+- `"name": "bbtg-news"`
 - `"private": true`
 - Scripts:
   - `"dev"`: `turbo run dev --parallel`
@@ -166,7 +166,7 @@ EVENT_PUBLISHER=inprocess
 
 ## Step 2 — `packages/types`
 
-**Package name:** `@newswire/types`
+**Package name:** `@bbtg-news/types`
 
 ### `src/constants.ts`
 
@@ -268,7 +268,7 @@ Export all schemas and inferred types. No barrel files — import from the speci
 
 ## Step 3 — `apps/api`
 
-**Package name:** `@newswire/api`
+**Package name:** `@bbtg-news/api`
 
 ### Structure
 
@@ -347,7 +347,7 @@ Export two functions:
 
 Export a configured `pino` logger instance. Fields:
 
-- `service`: `"@newswire/api"`
+- `service`: `"@bbtg-news/api"`
 - `level`: `env.NODE_ENV === 'production' ? 'info' : 'debug'`
 - `timestamp`: ISO 8601 via `pino.stdTimeFunctions.isoTime`
 
@@ -358,7 +358,7 @@ Never use `console.log` in production code paths — always use the pino logger.
 ### `src/lib/events/publisher.interface.ts`
 
 ```typescript
-import type { ArticlePublishedEvent, UpdatePostedEvent } from "@newswire/types";
+import type { ArticlePublishedEvent, UpdatePostedEvent } from "@bbtg-news/types";
 
 export type DomainEvent = ArticlePublishedEvent | UpdatePostedEvent;
 
@@ -373,7 +373,7 @@ Implements `EventPublisher`. When an `UpdatePosted` event is received, publish i
 
 ### `src/lib/events/eventbridge.publisher.ts`
 
-Implements `EventPublisher`. Publishes events to AWS EventBridge using the AWS SDK v3 `@aws-sdk/client-eventbridge`. Use `env.EVENTBRIDGE_BUS_NAME` as the event bus name. Set `Source` to `newswire.api` and `DetailType` to the event type.
+Implements `EventPublisher`. Publishes events to AWS EventBridge using the AWS SDK v3 `@aws-sdk/client-eventbridge`. Use `env.EVENTBRIDGE_BUS_NAME` as the event bus name. Set `Source` to `bbtg-news.api` and `DetailType` to the event type.
 
 ### `src/middleware/validate.ts`
 
@@ -411,7 +411,7 @@ Express router for `/articles`:
 
 **`POST /articles`**
 
-- Validate body with `PostArticleRequestSchema` from `@newswire/types`
+- Validate body with `PostArticleRequestSchema` from `@bbtg-news/types`
 - Generate `articleId` with `crypto.randomUUID()`
 - Generate `slug` from title (lowercase, hyphens)
 - Set `publishedAt` to current ISO timestamp
@@ -437,7 +437,7 @@ Express router for `/blogs`:
 
 **`POST /blogs/:blogId/updates`**
 
-- Validate body with `PostUpdateRequestSchema` from `@newswire/types`
+- Validate body with `PostUpdateRequestSchema` from `@bbtg-news/types`
 - Verify the blog exists by fetching it from the blogs table — return 404 if not found
 - Generate `updateId` with `crypto.randomUUID()`
 - Set `postedAt` to current ISO timestamp
@@ -565,7 +565,7 @@ Use Vitest + Supertest for all API tests. Mock DynamoDB and Redis using `vi.mock
 
 ## Step 4 — `apps/web`
 
-**Package name:** `@newswire/web`
+**Package name:** `@bbtg-news/web`
 
 ### Structure
 
@@ -824,14 +824,14 @@ Log each seeded item clearly. If items already exist, skip (check by ID before i
 
 ## Step 6 — CDK
 
-**Package name:** `@newswire/infra`
+**Package name:** `@bbtg-news/infra`
 
 ### Structure
 
 ```
 infra/
 ├── bin/
-│   └── newswire.ts
+│   └── bbtg-news.ts
 ├── lib/
 │   stacks/
 │   │   ├── network-stack.ts
@@ -851,7 +851,7 @@ infra/
 └── tsconfig.json
 ```
 
-### `bin/newswire.ts`
+### `bin/bbtg-news.ts`
 
 CDK app entry point. Read `env` from CDK context:
 
@@ -861,7 +861,7 @@ CDK app entry point. Read `env` from CDK context:
 
 Instantiate stacks in order: `NetworkStack` → `DataStack` (depends on NetworkStack) → `ApiStack` (depends on DataStack) → `FrontendStack` (depends on ApiStack).
 
-Tag all stacks with `Project: newswire` and `Environment: <env>`.
+Tag all stacks with `Project: bbtg-news` and `Environment: <env>`.
 
 ### `lib/stacks/network-stack.ts`
 
@@ -930,11 +930,11 @@ HTTP API (not REST API) — simpler, cheaper, lower latency. This demo doesn't n
 
 **EventBridge bus:**
 
-- Custom bus named `newswire-<env>`
+- Custom bus named `bbtg-news-<env>`
 
 **EventBridge rule + consumer Lambda** via `EventConsumerFunction` construct:
 
-- Rule matches events with `source: "newswire.api"` and `detail-type: "UpdatePosted"` on the custom bus
+- Rule matches events with `source: "bbtg-news.api"` and `detail-type: "UpdatePosted"` on the custom bus
 - Consumer Lambda receives the event, parses the `UpdatePostedEvent` payload with Zod, and publishes it to the Redis channel `blog:<blogId>:updates`
 - This is the bridge between EventBridge and the SSE fanout layer
 - Lambda runs in private subnets with access to ElastiCache security group
@@ -981,7 +981,7 @@ L3 construct for the EventBridge → Redis consumer Lambda. Accepts:
 The Lambda handler:
 
 1. Receives EventBridge event
-2. Validates the `detail` payload with `UpdatePostedEventSchema` from `@newswire/types`
+2. Validates the `detail` payload with `UpdatePostedEventSchema` from `@bbtg-news/types`
 3. Publishes the update to Redis channel `blog:<blogId>:updates` using `REDIS_CHANNELS.blogUpdates(blogId)`
 4. Logs the event with structured JSON (using the Lambda `requestId` as `traceId`)
 
@@ -1101,7 +1101,7 @@ Never deviate from these without flagging explicitly:
 - Every module must have a corresponding test file
 - All environment variables documented in `.env.example`
 - DynamoDB table names always environment-prefixed via env vars
-- Redis channels always use the `REDIS_CHANNELS` constant from `@newswire/types`
+- Redis channels always use the `REDIS_CHANNELS` constant from `@bbtg-news/types`
 
 ---
 
