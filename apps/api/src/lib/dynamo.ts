@@ -11,14 +11,23 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { env } from "./env.js";
 
+// Only inject explicit credentials for LocalStack (local dev).
+// On Lambda/ECS the SDK credential chain reads AWS_ACCESS_KEY_ID +
+// AWS_SECRET_ACCESS_KEY + AWS_SESSION_TOKEN from the runtime environment,
+// which includes the required session token for assumed roles.
+// Manually constructing credentials without the session token causes
+// "UnrecognizedClientException: The security token included in the request is invalid."
 const clientConfig: DynamoDBClientConfig = {
   region: env.AWS_REGION,
-  // Only pass explicit credentials in local dev (LocalStack).
-  // On ECS/Lambda the SDK resolves credentials from the task role automatically.
-  ...(env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY
-    ? { credentials: { accessKeyId: env.AWS_ACCESS_KEY_ID, secretAccessKey: env.AWS_SECRET_ACCESS_KEY } }
+  ...(env.DYNAMODB_ENDPOINT
+    ? {
+        endpoint: env.DYNAMODB_ENDPOINT,
+        credentials: {
+          accessKeyId: env.AWS_ACCESS_KEY_ID ?? "test",
+          secretAccessKey: env.AWS_SECRET_ACCESS_KEY ?? "test",
+        },
+      }
     : {}),
-  ...(env.DYNAMODB_ENDPOINT ? { endpoint: env.DYNAMODB_ENDPOINT } : {}),
 };
 
 const dynamoClient = new DynamoDBClient(clientConfig);
