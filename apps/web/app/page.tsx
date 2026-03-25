@@ -76,7 +76,7 @@ export default async function HomePage(): Promise<ReactNode> {
                     color: blog.status === "active" ? "#2ECC71" : "rgba(255,255,255,0.5)",
                   }}
                 >
-                  {blog.status === "active" ? "🔴 LIVE" : "Afgelopen"}
+                  {blog.status === "active" ? "🟢 LIVE" : "Afgelopen"}
                 </span>
               </a>
             ))}

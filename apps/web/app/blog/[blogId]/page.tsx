@@ -54,7 +54,7 @@ export default async function BlogPage({
               fontWeight: 600,
             }}
           >
-            {blog.status === "active" ? "🔴 LIVE" : "⏹ Afgelopen"}
+            {blog.status === "active" ? "🟢 LIVE" : "⏹ Afgelopen"}
           </span>
         </div>
       </header>
