@@ -59,8 +59,8 @@ export default async function BlogPage({
         </div>
       </header>
 
-      <LiveBlog blogId={blogId} initialUpdates={updates} />
       <ChatPanel blogId={blogId} />
+      <LiveBlog blogId={blogId} initialUpdates={updates} />
     </main>
   );
 }
