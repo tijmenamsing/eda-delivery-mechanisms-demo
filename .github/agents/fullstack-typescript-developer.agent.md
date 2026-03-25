@@ -264,7 +264,7 @@ Error responses follow a standard envelope:
 
 ## Git and PR conventions
 
-- Don't auto commit. Let the user verify and commit manually.
+- NEVER auto commit. Let the user verify and commit manually.
 
 ---
 

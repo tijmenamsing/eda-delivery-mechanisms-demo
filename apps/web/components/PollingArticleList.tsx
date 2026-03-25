@@ -36,16 +36,17 @@ export function PollingArticleList({
     }
   }, []);
 
-  // Set initial timestamp on mount (client-only)
+  // After the immediate fetch on mount, poll every 10 seconds. The interval
+  // starts after the first fetch resolves so the next poll is always exactly
+  // POLL_INTERVAL_MS after the previous one.
   useEffect(() => {
-    setLastUpdated(new Date());
-  }, []);
+    let interval: ReturnType<typeof setInterval>;
 
-  // Poll every 10 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      void poll();
-    }, POLL_INTERVAL_MS);
+    void poll().then(() => {
+      interval = setInterval(() => {
+        void poll();
+      }, POLL_INTERVAL_MS);
+    });
 
     return () => clearInterval(interval);
   }, [poll]);
