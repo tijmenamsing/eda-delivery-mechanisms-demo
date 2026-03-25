@@ -15,8 +15,8 @@
     "cdk:bootstrap": "cd infra && npx cdk bootstrap aws://870456164660/eu-west-1 --profile personal -c environment=dev -c awsAccountId=870456164660 -c awsRegion=eu-west-1",
     "infra:up": "docker-compose up -d",
     "infra:down": "docker-compose down",
-    "db:init": "tsx scripts/init-local.ts",
-    "db:seed": "tsx scripts/seed.ts",
+    "db:init": "tsx --env-file=.env scripts/init-local.ts",
+    "db:seed": "tsx --env-file=.env scripts/seed.ts",
     "setup": "pnpm infra:up && sleep 3 && pnpm db:init && pnpm db:seed"
   },
   "devDependencies": {
