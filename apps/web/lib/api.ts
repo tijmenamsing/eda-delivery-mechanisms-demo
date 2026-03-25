@@ -81,16 +81,22 @@ export async function postUpdate(
 }
 
 export function getSSEUrl(blogId: string): string {
-  return `${API_URL}/stream/${blogId}`;
+  // In production, SSE goes through CloudFront (same origin) to avoid
+  // mixed-content issues. NEXT_PUBLIC_API_URL points to the CloudFront domain.
+  const base =
+    typeof window !== "undefined"
+      ? (window.location.origin ?? API_URL)
+      : API_URL;
+  return `${base}/stream/${blogId}`;
 }
 
 export function getWSUrl(blogId: string): string {
-  // WebSocket URL uses the SSE_URL (ALB in production) since WS runs on ECS, not Lambda.
-  // Replace http(s) with ws(s) for the WebSocket protocol.
-  const base =
-    (typeof window !== "undefined"
-      ? process.env["NEXT_PUBLIC_SSE_URL"]
-      : undefined) ?? API_URL;
-  const wsBase = base.replace(/^http/, "ws");
+  // In production, WebSocket goes through CloudFront (same origin) to avoid
+  // mixed-content issues. Derive wss:// URL from the page origin.
+  if (typeof window !== "undefined" && window.location.protocol === "https:") {
+    return `wss://${window.location.host}/ws/chat/${blogId}`;
+  }
+  // Local development: use API_URL with ws:// protocol
+  const wsBase = API_URL.replace(/^http/, "ws");
   return `${wsBase}/ws/chat/${blogId}`;
 }
