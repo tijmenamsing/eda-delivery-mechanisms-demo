@@ -15,6 +15,7 @@ const envSchema = z.object({
   ARTICLES_TABLE: z.string().min(1),
   BLOGS_TABLE: z.string().min(1),
   UPDATES_TABLE: z.string().min(1),
+  CHAT_MESSAGES_TABLE: z.string().min(1).default("dev-chat-messages"),
   EVENT_PUBLISHER: z.enum(["inprocess", "eventbridge"]).default("inprocess"),
   EVENTBRIDGE_BUS_NAME: z.string().optional(),
   ALLOWED_ORIGIN: z.string().default("http://localhost:3000"),

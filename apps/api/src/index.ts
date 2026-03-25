@@ -6,6 +6,7 @@ import { app } from "./app.js";
 import { env } from "./lib/env.js";
 import { logger } from "./lib/logger.js";
 import { disconnectRedis } from "./lib/redis.js";
+import { setupWebSocket, closeWebSocket } from "./ws/setup.js";
 
 const server = app.listen(env.PORT, () => {
   logger.info(
@@ -18,10 +19,14 @@ const server = app.listen(env.PORT, () => {
   );
 });
 
+// Attach WebSocket server to the HTTP server (ECS only — Lambda doesn't reach here)
+setupWebSocket(server);
+
 // Graceful shutdown
 function shutdown(signal: string): void {
   logger.info({ signal }, "Received shutdown signal, draining connections...");
   server.close(async () => {
+    await closeWebSocket();
     await disconnectRedis();
     logger.info("Server shut down gracefully");
     process.exit(0);
@@ -36,6 +41,3 @@ function shutdown(signal: string): void {
 
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
-
-// Export app for testing
-export { app };

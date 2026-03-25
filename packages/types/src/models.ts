@@ -47,3 +47,15 @@ export const BlogSchema = z.object({
 });
 
 export type Blog = z.infer<typeof BlogSchema>;
+
+// --- Chat ---
+
+export const ChatMessageSchema = z.object({
+  messageId: z.string().uuid(),
+  blogId: z.string().uuid(),
+  author: z.string().min(1),
+  content: z.string().min(1).max(500),
+  postedAt: z.string().datetime(),
+});
+
+export type ChatMessage = z.infer<typeof ChatMessageSchema>;

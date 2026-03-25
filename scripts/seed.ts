@@ -26,6 +26,8 @@ const client = DynamoDBDocumentClient.from(
 const articlesTable = process.env["ARTICLES_TABLE"] ?? "dev-articles";
 const blogsTable = process.env["BLOGS_TABLE"] ?? "dev-blogs";
 const updatesTable = process.env["UPDATES_TABLE"] ?? "dev-updates";
+const chatMessagesTable =
+  process.env["CHAT_MESSAGES_TABLE"] ?? "dev-chat-messages";
 
 const blogId = "b1e5a3f0-1234-4abc-9def-000000000001";
 
@@ -221,6 +223,38 @@ async function seed(): Promise<void> {
       new PutCommand({ TableName: updatesTable, Item: update }),
     );
     console.log(`  💬 Update: ${update.content.substring(0, 50)}...`);
+  }
+
+  // Seed chat messages
+  const chatMessages = [
+    {
+      messageId: randomUUID(),
+      blogId,
+      author: "Lisa",
+      content: "Spannend! Ben benieuwd naar de TechTalks over cloud soevereiniteit 🇪🇺",
+      postedAt: "2026-04-15T13:35:00.000Z",
+    },
+    {
+      messageId: randomUUID(),
+      blogId,
+      author: "Martijn",
+      content: "Zit in de break room over event-driven architectuur. Echt goed verhaal!",
+      postedAt: "2026-04-15T16:10:00.000Z",
+    },
+    {
+      messageId: randomUUID(),
+      blogId,
+      author: "Sophie",
+      content: "Wie gaat er straks naar de sessie over Server-Sent Events?",
+      postedAt: "2026-04-15T16:45:00.000Z",
+    },
+  ];
+
+  for (const msg of chatMessages) {
+    await client.send(
+      new PutCommand({ TableName: chatMessagesTable, Item: msg }),
+    );
+    console.log(`  💬 Chat: ${msg.author}: ${msg.content.substring(0, 40)}...`);
   }
 
   console.log("\n✅ Seed data inserted\n");

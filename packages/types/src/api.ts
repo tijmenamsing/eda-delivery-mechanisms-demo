@@ -4,6 +4,7 @@ import {
   BlogSchema,
   BlogUpdateSchema,
   BlogUpdateType,
+  ChatMessageSchema,
 } from "./models.js";
 
 // --- Articles ---
@@ -61,4 +62,23 @@ export const GetBlogDetailResponseSchema = z.object({
 
 export type GetBlogDetailResponse = z.infer<
   typeof GetBlogDetailResponseSchema
+>;
+
+// --- Chat ---
+
+export const SendChatMessageRequestSchema = z.object({
+  content: z.string().min(1, "Message is required").max(500, "Message too long"),
+  author: z.string().min(1, "Author is required"),
+});
+
+export type SendChatMessageRequest = z.infer<
+  typeof SendChatMessageRequestSchema
+>;
+
+export const GetChatMessagesResponseSchema = z.object({
+  messages: z.array(ChatMessageSchema),
+});
+
+export type GetChatMessagesResponse = z.infer<
+  typeof GetChatMessagesResponseSchema
 >;

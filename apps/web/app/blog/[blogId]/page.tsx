@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { fetchBlogDetail, fetchBlogs } from "@/lib/api";
 import { LiveBlog } from "@/components/LiveBlog";
+import { ChatPanel } from "@/components/ChatPanel";
 import { notFound } from "next/navigation";
 
 interface BlogPageProps {
@@ -59,6 +60,7 @@ export default async function BlogPage({
       </header>
 
       <LiveBlog blogId={blogId} initialUpdates={updates} />
+      <ChatPanel blogId={blogId} />
     </main>
   );
 }

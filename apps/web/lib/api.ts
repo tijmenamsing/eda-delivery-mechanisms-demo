@@ -83,3 +83,14 @@ export async function postUpdate(
 export function getSSEUrl(blogId: string): string {
   return `${API_URL}/stream/${blogId}`;
 }
+
+export function getWSUrl(blogId: string): string {
+  // WebSocket URL uses the SSE_URL (ALB in production) since WS runs on ECS, not Lambda.
+  // Replace http(s) with ws(s) for the WebSocket protocol.
+  const base =
+    (typeof window !== "undefined"
+      ? process.env["NEXT_PUBLIC_SSE_URL"]
+      : undefined) ?? API_URL;
+  const wsBase = base.replace(/^http/, "ws");
+  return `${wsBase}/ws/chat/${blogId}`;
+}
