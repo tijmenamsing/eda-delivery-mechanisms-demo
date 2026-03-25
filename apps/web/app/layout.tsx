@@ -18,7 +18,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "BBTG Nieuws — Event-Driven Delivery Demo",
   description:
-    "Demonstratie van event-driven delivery mechanisms voor digitaal nieuws — BBTG Kennisfestival 2026",
+    "Demonstratie van event-driven delivery mechanisms voor digitaal nieuws — Navara Kennisfestival 2026",
   icons: {
     icon: "https://bbtg.com/favicon.svg",
   },

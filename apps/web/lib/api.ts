@@ -9,7 +9,8 @@ import type {
   PostUpdateResponse,
 } from "@bbtg-news/types/api";
 
-const API_URL = process.env["NEXT_PUBLIC_API_URL"] ?? process.env["API_URL"] ?? "http://localhost:3001";
+const API_URL =
+  process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:3001";
 
 export async function fetchArticles(): Promise<Article[]> {
   const res = await fetch(`${API_URL}/articles`, {
@@ -81,13 +82,12 @@ export async function postUpdate(
 }
 
 export function getSSEUrl(blogId: string): string {
-  // In production, SSE goes through CloudFront (same origin) to avoid
-  // mixed-content issues. NEXT_PUBLIC_API_URL points to the CloudFront domain.
-  const base =
-    typeof window !== "undefined"
-      ? (window.location.origin ?? API_URL)
-      : API_URL;
-  return `${base}/stream/${blogId}`;
+  // In production (HTTPS), SSE goes through CloudFront (same origin) to avoid
+  // mixed-content issues. In local dev, fall back to API_URL (localhost:3001).
+  if (typeof window !== "undefined" && window.location.protocol === "https:") {
+    return `${window.location.origin}/stream/${blogId}`;
+  }
+  return `${API_URL}/stream/${blogId}`;
 }
 
 export function getWSUrl(blogId: string): string {
@@ -96,7 +96,7 @@ export function getWSUrl(blogId: string): string {
   if (typeof window !== "undefined" && window.location.protocol === "https:") {
     return `wss://${window.location.host}/ws/chat/${blogId}`;
   }
-  // Local development: use API_URL with ws:// protocol
+  // In local dev, use API_URL with ws:// protocol
   const wsBase = API_URL.replace(/^http/, "ws");
   return `${wsBase}/ws/chat/${blogId}`;
 }

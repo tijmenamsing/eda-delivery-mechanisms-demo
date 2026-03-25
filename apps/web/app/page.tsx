@@ -30,7 +30,7 @@ export default async function HomePage(): Promise<ReactNode> {
           style={{ height: 50 }}
         />
         <p style={{ color: "#fff", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.15em", fontWeight: 700, marginTop: "0.25rem" }}>
-          News &amp; Stories
+          Vibe News
         </p>
       </header>
 
