@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BBTG Nieuws — System Architecture</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0f1115;
+      color: #fff;
+      font-family: 'Syne', system-ui, -apple-system, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px 20px 40px;
+    }
+
+    .header {
+      display: flex; align-items: center; gap: 14px; margin-bottom: 4px;
+    }
+    .header img { height: 34px; }
+    .header h1 { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em; }
+
+    .subtitle {
+      font-size: 0.7rem; color: rgba(255,255,255,0.4); margin-bottom: 20px;
+      font-family: 'JetBrains Mono', monospace; letter-spacing: 0.04em;
+    }
+
+    .controls { display: flex; gap: 10px; margin-bottom: 10px; }
+
+    .flow-btn {
+      padding: 9px 22px; border: 2px solid var(--btn-color);
+      border-radius: 12px; background: rgba(255,255,255,0.02);
+      color: var(--btn-color); font-family: 'Syne', system-ui, sans-serif;
+      font-size: 0.82rem; font-weight: 700; cursor: pointer;
+      transition: all 0.22s ease; user-select: none;
+    }
+    .flow-btn:hover { background: color-mix(in srgb, var(--btn-color) 12%, transparent); transform: translateY(-1px); }
+    .flow-btn.active { background: var(--btn-color); color: #0f1115; box-shadow: 0 0 20px color-mix(in srgb, var(--btn-color) 40%, transparent); }
+    .flow-btn.polling   { --btn-color: #FF6B00; }
+    .flow-btn.sse       { --btn-color: #2ECC71; }
+    .flow-btn.websocket { --btn-color: #3498DB; }
+
+    .flow-desc {
+      font-size: 0.72rem; color: rgba(255,255,255,0.35);
+      font-family: 'JetBrains Mono', monospace; min-height: 1.4em;
+      margin-bottom: 8px; text-align: center;
+    }
+
+    .progress-dots {
+      display: flex; gap: 5px; justify-content: center;
+      margin-bottom: 14px; min-height: 10px;
+    }
+    .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      transition: background 0.3s, transform 0.2s;
+    }
+    .dot.done  { background: var(--dot-color, rgba(255,255,255,0.3)); }
+    .dot.current { background: var(--dot-color, #fff); transform: scale(1.5); }
+
+    /* ── Main area ── */
+    .main-row {
+      display: flex; gap: 16px; align-items: flex-start;
+    }
+
+    /* ── Diagram ── */
+    .diagram {
+      position: relative; width: 1100px; height: 620px; flex-shrink: 0;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.01);
+    }
+    .diagram.flow-active { cursor: pointer; }
+
+    .diagram-svg {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none; z-index: 1;
+    }
+
+    /* ── Nodes ── */
+    .node {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      width: 130px; height: 62px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 3px;
+      border: 1.5px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+      font-size: 0.7rem; font-weight: 600;
+      color: rgba(255,255,255,0.45);
+      transition: all 0.35s ease;
+      z-index: 2; user-select: none;
+    }
+    .node img { width: 22px; height: 22px; object-fit: contain; opacity: 0.45; transition: opacity 0.35s ease; filter: grayscale(30%); }
+    .node .node-label { font-size: 0.65rem; white-space: nowrap; }
+    .node .node-sublabel { font-size: 0.55rem; color: rgba(255,255,255,0.3); }
+
+    /* Browser nodes are a bit different — no AWS icon */
+    .node.browser-node { width: 120px; height: 56px; }
+    .node.browser-node .node-ico { font-size: 1.1rem; }
+    .node.browser-node .node-role { font-size: 0.55rem; color: rgba(255,255,255,0.3); }
+
+    .node.glow {
+      border-color: var(--glow);
+      color: #fff;
+      background: color-mix(in srgb, var(--glow) 10%, rgba(15,17,21,0.95));
+      box-shadow: 0 0 24px color-mix(in srgb, var(--glow) 30%, transparent),
+                  inset 0 0 12px color-mix(in srgb, var(--glow) 6%, transparent);
+    }
+    .node.glow img { opacity: 1; filter: none; }
+
+    /* ── Edges ── */
+    .edge {
+      stroke: rgba(255,255,255,0.07); stroke-width: 1.5;
+      fill: none; transition: stroke 0.35s ease, stroke-width 0.35s ease, filter 0.35s ease;
+    }
+    .edge.glow {
+      stroke: var(--glow); stroke-width: 2.5;
+      filter: drop-shadow(0 0 4px var(--glow));
+    }
+
+    /* ── VPC boundary ── */
+    .vpc-rect { fill: none; stroke: rgba(255,255,255,0.07); stroke-width: 1; stroke-dasharray: 6 4; }
+    .vpc-label {
+      position: absolute; font-size: 0.58rem; font-weight: 700;
+      color: rgba(255,255,255,0.15); letter-spacing: 0.16em;
+      text-transform: uppercase; font-family: 'JetBrains Mono', monospace; z-index: 2;
+    }
+
+    /* ── Hints ── */
+    .diagram-hints {
+      position: absolute; bottom: 12px; right: 14px;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
+      color: rgba(255,255,255,0.18); z-index: 10; pointer-events: none;
+      text-align: right; line-height: 1.6;
+      transition: opacity 0.3s;
+    }
+
+    .step-counter {
+      position: absolute; top: 12px; right: 14px;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
+      color: rgba(255,255,255,0.22); z-index: 10; pointer-events: none;
+    }
+
+    /* ── Log panel ── */
+    .log-panel {
+      width: 280px; flex-shrink: 0;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 18px;
+      padding: 14px;
+      height: 620px;
+      display: flex; flex-direction: column;
+      gap: 0;
+    }
+    .log-panel-header {
+      font-size: 0.62rem; font-weight: 700;
+      color: rgba(255,255,255,0.25); letter-spacing: 0.14em;
+      text-transform: uppercase; font-family: 'JetBrains Mono', monospace;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 10px;
+      flex-shrink: 0;
+    }
+    .log-entries {
+      flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
+    }
+    .log-entries::-webkit-scrollbar { width: 4px; }
+    .log-entries::-webkit-scrollbar-track { background: transparent; }
+    .log-entries::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+    .log-entry {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 7px 8px; border-radius: 8px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      animation: fadeIn 0.25s ease;
+    }
+    .log-entry.current {
+      background: color-mix(in srgb, var(--glow) 8%, rgba(255,255,255,0.03));
+      border-color: color-mix(in srgb, var(--glow) 25%, transparent);
+    }
+    .log-entry.past { opacity: 0.6; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .log-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      flex-shrink: 0; margin-top: 4px;
+      background: var(--glow, rgba(255,255,255,0.3));
+    }
+    .log-text { font-size: 0.71rem; line-height: 1.4; color: rgba(255,255,255,0.75); }
+    .log-empty {
+      font-size: 0.68rem; color: rgba(255,255,255,0.2);
+      font-family: 'JetBrains Mono', monospace;
+      text-align: center; margin-top: 20px;
+    }
+
+    /* ── Legend ── */
+    .legend {
+      margin-top: 16px; display: flex; gap: 24px;
+      font-size: 0.68rem; color: rgba(255,255,255,0.35);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <img src="https://bbtg.com/assets/bbtg-logo-550x190-f846a0b3.png" alt="BBTG" />
+    <h1>System Architecture</h1>
+  </div>
+  <p class="subtitle">BBTG Nieuws — Event-Driven Delivery Mechanisms on AWS</p>
+
+  <div class="controls">
+    <button class="flow-btn polling"   onclick="startFlow('polling')">🔄 Polling</button>
+    <button class="flow-btn sse"       onclick="startFlow('sse')">📡 Server-Sent Events</button>
+    <button class="flow-btn websocket" onclick="startFlow('websocket')">💬 WebSocket</button>
+  </div>
+  <p class="flow-desc" id="flowDesc">&nbsp;</p>
+  <div class="progress-dots" id="progressDots"></div>
+
+  <div class="main-row">
+    <div class="diagram" id="diagram">
+      <svg class="diagram-svg" id="svg"></svg>
+      <div class="step-counter" id="stepCounter"></div>
+      <div class="diagram-hints" id="diagHints" style="opacity:0">
+        Space / → &nbsp;advance<br>
+        ← &nbsp;go back<br>
+        Esc &nbsp;reset
+      </div>
+    </div>
+
+    <div class="log-panel">
+      <div class="log-panel-header">📋 Flow log</div>
+      <div class="log-entries" id="logEntries">
+        <p class="log-empty">Select a flow to begin</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span class="legend-dot" style="background:#FF6B00"></span> Polling</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#2ECC71"></span> SSE</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#3498DB"></span> WebSocket</div>
+  </div>
+
+<script>
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ICONS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+const B = 'https://cdn.jsdelivr.net/gh/awslabs/aws-icons-for-plantuml@main/dist/';
+const ICONS = {
+  cloudfront: B + 'NetworkingContentDelivery/CloudFront.png',
+  s3:         B + 'Storage/SimpleStorageService.png',
+  apigw:      B + 'NetworkingContentDelivery/APIGateway.png',
+  alb:        B + 'NetworkingContentDelivery/ElasticLoadBalancingApplicationLoadBalancer.png',
+  lambda:     B + 'Compute/Lambda.png',
+  ecs:        B + 'Containers/ElasticContainerService.png',
+  dynamodb:   B + 'Database/DynamoDB.png',
+  eventbridge:B + 'ApplicationIntegration/EventBridge.png',
+  redis:      B + 'Database/ElastiCacheElastiCacheforRedis.png',
+};
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// LAYOUT DATA
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+const NW = 130, NH = 62; // node width/height
+
+const nodes = [
+  { id: 'author',      browser: true, ico: '✍️',  label: 'Author',     sublabel: 'Journalist', x: 165, y: 55  },
+  { id: 'cloudfront',  ico: ICONS.cloudfront,      label: 'CloudFront',  x: 550, y: 55  },
+  { id: 'visitor',     browser: true, ico: '👁',   label: 'Visitor',     sublabel: 'Reader',     x: 935, y: 55  },
+  { id: 's3',          ico: ICONS.s3,               label: 'S3',          x: 130, y: 215 },
+  { id: 'apigw',       ico: ICONS.apigw,            label: 'API Gateway', x: 380, y: 215 },
+  { id: 'alb',         ico: ICONS.alb,              label: 'ALB',         x: 795, y: 215 },
+  { id: 'lambda',      ico: ICONS.lambda,           label: 'Lambda',      sublabel: 'Authoring',  x: 290, y: 375 },
+  { id: 'ecs',         ico: ICONS.ecs,              label: 'ECS Fargate', sublabel: 'SSE + WS',   x: 795, y: 375 },
+  { id: 'dynamodb',    ico: ICONS.dynamodb,         label: 'DynamoDB',    x: 130, y: 535 },
+  { id: 'eventbridge', ico: ICONS.eventbridge,      label: 'EventBridge', x: 370, y: 535 },
+  { id: 'consumer',    ico: ICONS.lambda,           label: 'Lambda',      sublabel: 'Consumer',   x: 570, y: 535 },
+  { id: 'redis',       ico: ICONS.redis,            label: 'ElastiCache', sublabel: 'Redis',      x: 795, y: 535 },
+];
+
+function pt(id, side, offset) {
+  const n = nodes.find(n => n.id === id);
+  const o = offset || 0;
+  switch (side) {
+    case 'top':    return [n.x + o, n.y - NH/2];
+    case 'bottom': return [n.x + o, n.y + NH/2];
+    case 'left':   return [n.x - NW/2, n.y + o];
+    case 'right':  return [n.x + NW/2, n.y + o];
+  }
+}
+
+const edges = [
+  { id: 'author-cf',     from: pt('author','right'),          to: pt('cloudfront','left')         },
+  { id: 'visitor-cf',    from: pt('visitor','left'),          to: pt('cloudfront','right')        },
+  { id: 'cf-s3',         from: pt('cloudfront','bottom',-60), to: pt('s3','top',10)               },
+  { id: 'cf-apigw',      from: pt('cloudfront','bottom',-20), to: pt('apigw','top',10)            },
+  { id: 'cf-alb',        from: pt('cloudfront','bottom',50),  to: pt('alb','top',-10)             },
+  { id: 'apigw-lambda',  from: pt('apigw','bottom',-5),       to: pt('lambda','top',10)           },
+  { id: 'lambda-dynamo', from: pt('lambda','bottom',-20),     to: pt('dynamodb','top',15)         },
+  { id: 'lambda-eb',     from: pt('lambda','bottom',20),      to: pt('eventbridge','top',-10)     },
+  { id: 'eb-consumer',   from: pt('eventbridge','right'),     to: pt('consumer','left')           },
+  { id: 'consumer-redis',from: pt('consumer','right'),        to: pt('redis','left')              },
+  { id: 'redis-ecs',     from: pt('redis','top'),             to: pt('ecs','bottom')              },
+  { id: 'ecs-alb',       from: pt('ecs','top'),               to: pt('alb','bottom')              },
+];
+
+// VPC boundary around ALB, ECS, Consumer, Redis
+const vpcBox = { x: 540, y: 186, w: 380, h: 380, r: 16 };
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// FLOW COLORS & DESCRIPTIONS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+const COLORS = { polling: '#FF6B00', sse: '#2ECC71', websocket: '#3498DB' };
+
+const DESCS = {
+  polling:   'Author publishes — visitor reads on next 60s poll',
+  sse:       'Author publishes — visitor receives instantly via SSE push',
+  websocket: 'Author sends message — both author and visitor see it via WebSocket',
+};
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// FLOW STEPS
+// Each step: { nodes, edges, label, clear }
+// Nodes/edges accumulate. clear: true resets highlights before this step.
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+const flows = {
+  polling: [
+    { nodes: ['author'],                 edges: [],                   label: '✏️  Author writes and publishes an article' },
+    { nodes: ['cloudfront'],             edges: ['author-cf'],        label: '→  Via CloudFront' },
+    { nodes: ['apigw'],                  edges: ['cf-apigw'],         label: '📨  POST /articles → API Gateway' },
+    { nodes: ['lambda'],                 edges: ['apigw-lambda'],     label: '⚡  Authoring Lambda invoked' },
+    { nodes: ['dynamodb'],               edges: ['lambda-dynamo'],    label: '💾  Article stored in DynamoDB' },
+    { clear: true, nodes: ['visitor'],   edges: [],                   label: '⏱  60 seconds pass — visitor\'s browser polls…' },
+    { nodes: ['cloudfront'],             edges: ['visitor-cf'],       label: '→  GET /articles via CloudFront' },
+    { nodes: ['apigw'],                  edges: ['cf-apigw'],         label: '📡  Routed to API Gateway' },
+    { nodes: ['lambda'],                 edges: ['apigw-lambda'],     label: '⚡  Lambda fetches from DynamoDB' },
+    { nodes: ['dynamodb'],               edges: ['lambda-dynamo'],    label: '📰  New article returned to visitor — after a delay' },
+  ],
+  sse: [
+    { nodes: ['visitor'],                edges: [],                   label: '👁  Visitor opens live blog — SSE connection opens' },
+    { nodes: ['cloudfront'],             edges: ['visitor-cf'],       label: '→  Connection via CloudFront' },
+    { nodes: ['alb'],                    edges: ['cf-alb'],           label: '↗️  ALB routes to ECS Fargate' },
+    { nodes: ['ecs'],                    edges: ['ecs-alb'],          label: '📡  Persistent SSE stream established on ECS' },
+    { clear: true, nodes: ['author'],    edges: [],                   label: '✏️  Author posts a live update' },
+    { nodes: ['cloudfront'],             edges: ['author-cf'],        label: '→  Via CloudFront' },
+    { nodes: ['apigw'],                  edges: ['cf-apigw'],         label: '📨  POST /updates → API Gateway' },
+    { nodes: ['lambda'],                 edges: ['apigw-lambda'],     label: '⚡  Authoring Lambda invoked' },
+    { nodes: ['dynamodb'],               edges: ['lambda-dynamo'],    label: '💾  Update stored in DynamoDB' },
+    { nodes: ['eventbridge'],            edges: ['lambda-eb'],        label: '⚡  UpdatePosted event → EventBridge' },
+    { nodes: ['consumer'],               edges: ['eb-consumer'],      label: '🔗  Consumer Lambda triggered by event rule' },
+    { nodes: ['redis'],                  edges: ['consumer-redis'],   label: '📢  Published to Redis channel blog:<id>:updates' },
+    { nodes: ['ecs'],                    edges: ['redis-ecs'],        label: '📡  ECS SSE server receives via Redis subscription' },
+    { nodes: ['alb'],                    edges: ['ecs-alb'],          label: '↗️  ECS pushes through ALB' },
+    { nodes: ['cloudfront'],             edges: ['cf-alb'],           label: '☁️  Via CloudFront' },
+    { nodes: ['visitor'],                edges: ['visitor-cf'],       label: '🟢  Visitor sees update instantly — no polling needed!' },
+  ],
+  websocket: [
+    { nodes: ['author', 'visitor'],      edges: [],                   label: '🔗  Both author and visitor have WebSocket connections open' },
+    { nodes: ['cloudfront'],             edges: ['author-cf', 'visitor-cf'], label: '→  Connections via CloudFront' },
+    { nodes: ['alb'],                    edges: ['cf-alb'],           label: '↗️  ALB maintains persistent WS connections' },
+    { nodes: ['ecs'],                    edges: ['ecs-alb'],          label: '🐳  ECS Fargate handles WebSocket sessions' },
+    { clear: true, nodes: ['author'],    edges: [],                   label: '💬  Author sends a chat message' },
+    { nodes: ['cloudfront'],             edges: ['author-cf'],        label: '→  Via CloudFront' },
+    { nodes: ['alb'],                    edges: ['cf-alb'],           label: '↗️  ALB routes to ECS' },
+    { nodes: ['ecs'],                    edges: ['ecs-alb'],          label: '🐳  ECS receives message via WebSocket' },
+    { nodes: ['redis'],                  edges: ['redis-ecs'],        label: '📢  ECS publishes to Redis for fan-out to all instances' },
+    { nodes: [],                         edges: ['redis-ecs'],        label: '⚡  All ECS nodes subscribe — every instance gets the message' },
+    { nodes: ['alb'],                    edges: ['ecs-alb'],          label: '↗️  Each ECS node pushes to its connected clients' },
+    { nodes: ['cloudfront'],             edges: ['cf-alb'],           label: '☁️  Via CloudFront' },
+    { nodes: ['author', 'visitor'],      edges: ['author-cf', 'visitor-cf'], label: '🟢  Both author and visitor see the message immediately' },
+  ],
+};
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// RENDER: DOM
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+const diagram    = document.getElementById('diagram');
+const svg        = document.getElementById('svg');
+const stepCounter= document.getElementById('stepCounter');
+const diagHints  = document.getElementById('diagHints');
+const flowDesc   = document.getElementById('flowDesc');
+const progressDots = document.getElementById('progressDots');
+const logEntries = document.getElementById('logEntries');
+
+const NS = 'http://www.w3.org/2000/svg';
+
+// VPC boundary
+const vpcEl = document.createElementNS(NS, 'rect');
+vpcEl.setAttribute('x',      vpcBox.x);
+vpcEl.setAttribute('y',      vpcBox.y);
+vpcEl.setAttribute('width',  vpcBox.w);
+vpcEl.setAttribute('height', vpcBox.h);
+vpcEl.setAttribute('rx',     vpcBox.r);
+vpcEl.classList.add('vpc-rect');
+svg.appendChild(vpcEl);
+
+const vpcLabel = document.createElement('div');
+vpcLabel.className = 'vpc-label';
+vpcLabel.textContent = 'VPC';
+vpcLabel.style.left = (vpcBox.x + vpcBox.w - 38) + 'px';
+vpcLabel.style.top  = (vpcBox.y + 8) + 'px';
+diagram.appendChild(vpcLabel);
+
+// Edges
+for (const e of edges) {
+  const line = document.createElementNS(NS, 'line');
+  line.setAttribute('x1', e.from[0]); line.setAttribute('y1', e.from[1]);
+  line.setAttribute('x2', e.to[0]);   line.setAttribute('y2', e.to[1]);
+  line.classList.add('edge');
+  line.id = 'edge-' + e.id;
+  svg.appendChild(line);
+}
+
+// Nodes
+for (const n of nodes) {
+  const el = document.createElement('div');
+  el.id = 'node-' + n.id;
+  el.style.left = n.x + 'px';
+  el.style.top  = n.y + 'px';
+
+  if (n.browser) {
+    el.className = 'node browser-node';
+    el.innerHTML = `<span class="node-ico">${n.ico}</span>
+      <span class="node-label">${n.label}</span>
+      <span class="node-role">${n.sublabel || ''}</span>`;
+  } else {
+    el.className = 'node';
+    el.innerHTML = `<img src="${n.ico}" alt="${n.label}">
+      <span class="node-label">${n.label}</span>
+      ${n.sublabel ? `<span class="node-sublabel">${n.sublabel}</span>` : ''}`;
+  }
+  diagram.appendChild(el);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// MANUAL STEP ENGINE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+let activeFlow = null;
+let stepIndex  = -1;
+
+function clearHighlights() {
+  document.querySelectorAll('.node.glow').forEach(el => el.classList.remove('glow'));
+  document.querySelectorAll('.edge.glow').forEach(el => el.classList.remove('glow'));
+}
+
+function clearAll() {
+  clearHighlights();
+  stepCounter.textContent = '';
+  diagHints.style.opacity = '0';
+  progressDots.innerHTML = '';
+  logEntries.innerHTML = '<p class="log-empty">Select a flow to begin</p>';
+}
+
+function setColor(color) {
+  document.documentElement.style.setProperty('--glow', color);
+  document.documentElement.style.setProperty('--dot-color', color);
+}
+
+function buildDots(total, current) {
+  progressDots.innerHTML = '';
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i < current ? ' done' : i === current ? ' current' : '');
+    progressDots.appendChild(d);
+  }
+}
+
+// Rebuild the log panel from scratch up to (and including) targetIndex
+function rebuildLog(name, targetIndex, color) {
+  const steps = flows[name];
+  logEntries.innerHTML = '';
+  for (let i = 0; i <= targetIndex; i++) {
+    const step = steps[i];
+    if (!step.label) continue;
+    const entry = document.createElement('div');
+    entry.className = 'log-entry' + (i === targetIndex ? ' current' : ' past');
+    entry.style.setProperty('--glow', color);
+    entry.innerHTML = `<div class="log-dot"></div><div class="log-text">${step.label}</div>`;
+    logEntries.appendChild(entry);
+  }
+  // Auto-scroll to bottom
+  logEntries.scrollTop = logEntries.scrollHeight;
+}
+
+// Apply a single step's highlights (does NOT clear — caller manages that)
+function applyStepHighlights(name, index) {
+  const step = flows[name][index];
+  if (!step) return;
+  if (step.clear) clearHighlights();
+  for (const nid of (step.nodes || [])) {
+    const el = document.getElementById('node-' + nid);
+    if (el) el.classList.add('glow');
+  }
+  for (const eid of (step.edges || [])) {
+    const el = document.getElementById('edge-' + eid);
+    if (el) el.classList.add('glow');
+  }
+}
+
+// Replay all highlights from step 0 up to targetIndex
+function replayHighlights(name, targetIndex) {
+  clearHighlights();
+  for (let i = 0; i <= targetIndex; i++) {
+    applyStepHighlights(name, i);
+  }
+}
+
+function renderStep(name, index) {
+  const steps = flows[name];
+  const color = COLORS[name];
+
+  replayHighlights(name, index);
+  rebuildLog(name, index, color);
+
+  const isLast = index === steps.length - 1;
+  stepCounter.textContent = `${index + 1} / ${steps.length}`;
+  buildDots(steps.length, index);
+  diagHints.innerHTML = isLast
+    ? 'Esc &nbsp;reset &nbsp;|&nbsp; ← go back'
+    : 'Space / → &nbsp;advance &nbsp;|&nbsp; ← back &nbsp;|&nbsp; Esc reset';
+  diagHints.style.opacity = '1';
+}
+
+function startFlow(name) {
+  if (activeFlow === name) {
+    // Toggle off / reset
+    activeFlow = null;
+    stepIndex = -1;
+    document.querySelectorAll('.flow-btn').forEach(b => b.classList.remove('active'));
+    clearAll();
+    flowDesc.innerHTML = '&nbsp;';
+    flowDesc.style.color = 'rgba(255,255,255,0.35)';
+    return;
+  }
+
+  activeFlow = name;
+  stepIndex = 0;
+  document.querySelectorAll('.flow-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.flow-btn.' + name).classList.add('active');
+
+  const color = COLORS[name];
+  setColor(color);
+  clearHighlights();
+  diagram.classList.add('flow-active');
+
+  flowDesc.textContent = DESCS[name];
+  flowDesc.style.color = color;
+
+  renderStep(name, 0);
+}
+
+function advance() {
+  if (!activeFlow) return;
+  const steps = flows[activeFlow];
+  if (stepIndex >= steps.length - 1) return;
+  stepIndex++;
+  renderStep(activeFlow, stepIndex);
+}
+
+function goBack() {
+  if (!activeFlow || stepIndex <= 0) return;
+  stepIndex--;
+  renderStep(activeFlow, stepIndex);
+}
+
+function reset() {
+  if (activeFlow) startFlow(activeFlow); // toggles off
+}
+
+// Click diagram to advance
+diagram.addEventListener('click', advance);
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+  if (e.key === ' ' || e.key === 'ArrowRight') { e.preventDefault(); advance(); }
+  else if (e.key === 'ArrowLeft')               { e.preventDefault(); goBack(); }
+  else if (e.key === 'Escape')                  { reset(); }
+});
+</script>
+</body>
+</html>

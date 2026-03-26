@@ -278,6 +278,10 @@ When given a task, always follow this sequence:
 4. **Implement** — write complete, working code. No placeholders, no `// TODO`, no `// implement this`.
 5. **Test** — generate the corresponding test file alongside every new module. Run existing tests if possible.
 6. **Verify** — after making changes, trace the call path mentally (or by reading code) to confirm the change is wired up end-to-end.
+7. **Update docs** — always update relevant documentation after making changes. In particular:
+   - `docs/architecture-diagram.html` must be kept in sync with any infrastructure or flow changes (new services, changed routing, new delivery mechanisms).
+   - `docs/architecture.md` must reflect any architectural decisions made.
+   - `docs/demo-script.md` must reflect any UI or flow changes that affect the demo.
 
 When you deviate from the architecture documented in this file, say so explicitly and explain why.
 
