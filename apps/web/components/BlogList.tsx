@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { ReactNode } from "react";
 import type { Blog } from "@bbtg-news/types/models";
 import type { GetBlogsResponse } from "@bbtg-news/types/api";
@@ -8,21 +8,35 @@ import type { GetBlogsResponse } from "@bbtg-news/types/api";
 const API_URL =
   process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:3001";
 
+// Poll at the same cadence as articles so the status badge updates
+// automatically when the blog is closed during a session.
+const POLL_INTERVAL_MS = 10_000;
+
 export function BlogList(): ReactNode {
   const [blogs, setBlogs] = useState<Blog[]>([]);
 
-  useEffect(() => {
-    fetch(`${API_URL}/blogs`)
-      .then((res) => (res.ok ? (res.json() as Promise<GetBlogsResponse>) : null))
-      .then((data) => {
-        if (data) setBlogs(data.blogs);
-      })
-      .catch(() => {
-        // Silently ignore — section simply won't render
-      });
+  const fetchBlogs = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_URL}/blogs`);
+      if (res.ok) {
+        const data = (await res.json()) as GetBlogsResponse;
+        setBlogs(data.blogs);
+      }
+    } catch {
+      // Silently ignore — section simply won't render on first load;
+      // subsequent failures preserve the last known state.
+    }
   }, []);
 
-  if (blogs.length === 0) return null;
+  useEffect(() => {
+    void fetchBlogs();
+    const interval = setInterval(() => void fetchBlogs(), POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [fetchBlogs]);
+
+  const activeBlogs = blogs.filter((b) => b.status === "active");
+
+  if (activeBlogs.length === 0) return null;
 
   return (
     <div
@@ -40,7 +54,7 @@ export function BlogList(): ReactNode {
         ⚡ Live blogs
       </h2>
       <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-        {blogs.map((blog) => (
+        {activeBlogs.map((blog) => (
           <a
             key={blog.blogId}
             href={`/blog/${blog.blogId}`}
@@ -62,10 +76,10 @@ export function BlogList(): ReactNode {
               style={{
                 fontSize: "0.7rem",
                 fontWeight: 600,
-                color: blog.status === "active" ? "#2ECC71" : "rgba(255,255,255,0.5)",
+                color: "#2ECC71",
               }}
             >
-              {blog.status === "active" ? "🟢 LIVE" : "Afgelopen"}
+              🟢 LIVE
             </span>
           </a>
         ))}

@@ -9,12 +9,8 @@ interface BlogPageProps {
 }
 
 export async function generateStaticParams(): Promise<{ blogId: string }[]> {
-  try {
-    const blogs = await fetchBlogs();
-    return blogs.map((b) => ({ blogId: b.blogId }));
-  } catch {
-    return [];
-  }
+  const blogs = await fetchBlogs();
+  return blogs.map((b) => ({ blogId: b.blogId }));
 }
 
 export default async function BlogPage({

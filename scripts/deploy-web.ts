@@ -154,11 +154,25 @@ async function main(): Promise<void> {
   await waitForInvalidation(distributionId, preInvalidation?.Id ?? "");
   console.log("  API cache cleared ✓\n");
 
-  // ── 4. Build Next.js static export ──────────────────────────────────────
+  // ── 4. Seed DynamoDB with demo data ─────────────────────────────────────
+  // Seed runs *before* next build so generateStaticParams and any SSR fetches
+  // find data in DynamoDB. The seed script is idempotent — it prunes all
+  // tables before re-inserting, so re-deploying is always safe.
+  console.log("🌱 Seeding DynamoDB with demo data...");
+  exec("npx tsx scripts/seed.ts", {
+    ARTICLES_TABLE: `${environment}-articles`,
+    BLOGS_TABLE: `${environment}-blogs`,
+    UPDATES_TABLE: `${environment}-updates`,
+    CHAT_MESSAGES_TABLE: `${environment}-chat-messages`,
+    // Omit DYNAMODB_ENDPOINT so the AWS SDK uses the real endpoint.
+  });
+  console.log("  Seed complete ✓\n");
+
+  // ── 5. Build Next.js static export ──────────────────────────────────────
   console.log("🏗️  Building Next.js static export...");
   exec("pnpm --filter @bbtg-news/web build");
 
-  // ── 5. Upload to S3 with correct cache headers ───────────────────────────
+  // ── 6. Upload to S3 with correct cache headers ───────────────────────────
   // Two-pass sync:
   //   Pass 1 — all non-HTML assets (JS, CSS, fonts, images): immutable long cache
   //   Pass 2 — HTML files only: no-cache so browsers always fetch the latest shell
@@ -172,7 +186,7 @@ async function main(): Promise<void> {
       `--cache-control "no-cache" --exclude "*" --include "*.html"`,
   );
 
-  // ── 6. Invalidate CloudFront ─────────────────────────────────────────────
+  // ── 7. Invalidate CloudFront ─────────────────────────────────────────────
   console.log("\n🌐 Invalidating CloudFront cache...");
   const { Invalidation } = await cfrontClient.send(
     new CreateInvalidationCommand({
