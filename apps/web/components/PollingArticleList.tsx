@@ -6,6 +6,9 @@ import type { Article } from "@bbtg-news/types/models";
 import type { GetArticlesResponse } from "@bbtg-news/types/api";
 import { ArticleList } from "./ArticleList";
 
+const API_URL =
+  process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:3001";
+
 const POLL_INTERVAL_MS = 10_000;
 
 interface PollingArticleListProps {
@@ -22,9 +25,7 @@ export function PollingArticleList({
 
   const poll = useCallback(async () => {
     try {
-      const apiUrl =
-        process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:3001";
-      const res = await fetch(`${apiUrl}/articles`);
+      const res = await fetch(`${API_URL}/articles`);
       if (res.ok) {
         const data = (await res.json()) as GetArticlesResponse;
         setArticles(data.articles);
@@ -36,16 +37,17 @@ export function PollingArticleList({
     }
   }, []);
 
-  // Set initial timestamp on mount (client-only)
+  // After the immediate fetch on mount, poll every 10 seconds. The interval
+  // starts after the first fetch resolves so the next poll is always exactly
+  // POLL_INTERVAL_MS after the previous one.
   useEffect(() => {
-    setLastUpdated(new Date());
-  }, []);
+    let interval: ReturnType<typeof setInterval>;
 
-  // Poll every 10 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      void poll();
-    }, POLL_INTERVAL_MS);
+    void poll().then(() => {
+      interval = setInterval(() => {
+        void poll();
+      }, POLL_INTERVAL_MS);
+    });
 
     return () => clearInterval(interval);
   }, [poll]);

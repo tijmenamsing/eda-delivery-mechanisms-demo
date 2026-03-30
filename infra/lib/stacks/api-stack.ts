@@ -16,6 +16,7 @@ export interface ApiStackProps extends cdk.StackProps {
   readonly articlesTable: dynamodb.ITable;
   readonly blogsTable: dynamodb.ITable;
   readonly updatesTable: dynamodb.ITable;
+  readonly chatMessagesTable: dynamodb.ITable;
   readonly redisCluster: elasticache.CfnReplicationGroup;
 }
 
@@ -50,6 +51,7 @@ export class ApiStack extends cdk.Stack {
       articlesTable: props.articlesTable,
       blogsTable: props.blogsTable,
       updatesTable: props.updatesTable,
+      chatMessagesTable: props.chatMessagesTable,
       eventBus,
       environment: props.environment,
       redisUrl,
@@ -99,6 +101,7 @@ export class ApiStack extends cdk.Stack {
       { method: "GET", path: "/blogs" },
       { method: "GET", path: "/blogs/{blogId}" },
       { method: "POST", path: "/updates" },
+      { method: "GET", path: "/chat/{blogId}/messages" },
       { method: "GET", path: "/health" },
     ];
 
@@ -121,6 +124,7 @@ export class ApiStack extends cdk.Stack {
       articlesTable: props.articlesTable,
       blogsTable: props.blogsTable,
       updatesTable: props.updatesTable,
+      chatMessagesTable: props.chatMessagesTable,
       eventBus,
       environment: props.environment,
     });

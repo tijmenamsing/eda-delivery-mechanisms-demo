@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { fetchBlogDetail, fetchBlogs } from "@/lib/api";
 import { LiveBlog } from "@/components/LiveBlog";
+import { ChatPanel } from "@/components/ChatPanel";
 import { notFound } from "next/navigation";
 
 interface BlogPageProps {
@@ -8,12 +9,8 @@ interface BlogPageProps {
 }
 
 export async function generateStaticParams(): Promise<{ blogId: string }[]> {
-  try {
-    const blogs = await fetchBlogs();
-    return blogs.map((b) => ({ blogId: b.blogId }));
-  } catch {
-    return [];
-  }
+  const blogs = await fetchBlogs();
+  return blogs.map((b) => ({ blogId: b.blogId }));
 }
 
 export default async function BlogPage({
@@ -53,11 +50,12 @@ export default async function BlogPage({
               fontWeight: 600,
             }}
           >
-            {blog.status === "active" ? "🔴 LIVE" : "⏹ Afgelopen"}
+            {blog.status === "active" ? "🟢 LIVE" : "⏹ Afgelopen"}
           </span>
         </div>
       </header>
 
+      <ChatPanel blogId={blogId} />
       <LiveBlog blogId={blogId} initialUpdates={updates} />
     </main>
   );

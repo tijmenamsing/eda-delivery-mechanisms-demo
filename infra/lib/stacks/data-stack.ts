@@ -13,6 +13,7 @@ export class DataStack extends cdk.Stack {
   public readonly articlesTable: dynamodb.ITable;
   public readonly blogsTable: dynamodb.ITable;
   public readonly updatesTable: dynamodb.ITable;
+  public readonly chatMessagesTable: dynamodb.ITable;
   public readonly redisCluster: elasticache.CfnReplicationGroup;
   public readonly redisSecurityGroup: ec2.ISecurityGroup;
 
@@ -82,6 +83,36 @@ export class DataStack extends cdk.Stack {
     });
 
     this.updatesTable = updatesTable;
+
+    // ------------------------------------------------------------------ //
+    // Chat Messages Table
+    // ------------------------------------------------------------------ //
+
+    const chatMessagesTable = new dynamodb.Table(this, "ChatMessagesTable", {
+      tableName: `${props.environment}-chat-messages`,
+      partitionKey: {
+        name: "messageId",
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy,
+      timeToLiveAttribute: "ttl",
+    });
+
+    chatMessagesTable.addGlobalSecondaryIndex({
+      indexName: "blogId-postedAt-index",
+      partitionKey: {
+        name: "blogId",
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: "postedAt",
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
+    this.chatMessagesTable = chatMessagesTable;
 
     // ------------------------------------------------------------------ //
     // ElastiCache Redis (L1 — no stable L2 construct available)

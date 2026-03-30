@@ -23,9 +23,9 @@ function createTestDataStack(): Template {
 }
 
 describe("DataStack", () => {
-  it("creates three DynamoDB tables", () => {
+  it("creates four DynamoDB tables", () => {
     const template = createTestDataStack();
-    template.resourceCountIs("AWS::DynamoDB::Table", 3);
+    template.resourceCountIs("AWS::DynamoDB::Table", 4);
   });
 
   it("articles table has correct key schema", () => {

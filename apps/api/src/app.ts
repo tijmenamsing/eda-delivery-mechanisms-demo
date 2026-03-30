@@ -11,6 +11,7 @@ import { createArticlesRouter } from "./routes/articles.js";
 import { createUpdatesRouter } from "./routes/updates.js";
 import { createBlogsRouter } from "./routes/blogs.js";
 import { createStreamRouter } from "./routes/stream.js";
+import { createChatRouter } from "./routes/chat.js";
 import { createHealthRouter } from "./routes/health.js";
 import { InProcessPublisher } from "./lib/events/inprocess.publisher.js";
 import { EventBridgePublisher } from "./lib/events/eventbridge.publisher.js";
@@ -39,6 +40,7 @@ app.use("/articles", createArticlesRouter(publisher));
 app.use("/updates", createUpdatesRouter(publisher));
 app.use("/blogs", createBlogsRouter());
 app.use("/stream", createStreamRouter());
+app.use("/chat", createChatRouter());
 
 // Error handler — must be last
 app.use(errorHandler);

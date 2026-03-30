@@ -30,6 +30,11 @@ function createTestApiStack(): Template {
     removalPolicy: cdk.RemovalPolicy.DESTROY,
   });
 
+  const chatMessagesTable = new dynamodb.Table(depStack, "ChatMessages", {
+    partitionKey: { name: "messageId", type: dynamodb.AttributeType.STRING },
+    removalPolicy: cdk.RemovalPolicy.DESTROY,
+  });
+
   const redisSg = new ec2.SecurityGroup(depStack, "RedisSg", { vpc });
 
   const subnetGroup = new elasticache.CfnSubnetGroup(
@@ -63,6 +68,7 @@ function createTestApiStack(): Template {
     articlesTable,
     blogsTable,
     updatesTable,
+    chatMessagesTable,
     redisCluster,
   });
 

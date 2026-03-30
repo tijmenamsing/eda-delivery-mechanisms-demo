@@ -43,10 +43,19 @@ export class FrontendStack extends cdk.Stack {
 
     const apiOrigin = new origins.HttpOrigin(apiHostname);
 
+    // ALB origin for SSE and WebSocket traffic.
+    // CloudFront terminates TLS so the browser connects over HTTPS/WSS,
+    // then CloudFront forwards to the ALB over HTTP/WS.
+    const albOrigin = new origins.HttpOrigin(props.albDnsName, {
+      protocolPolicy: cloudfront.OriginProtocolPolicy.HTTP_ONLY,
+    });
+
     // ------------------------------------------------------------------ //
     // CloudFront distribution
-    // SSE (/stream/*) is NOT routed through CloudFront — it goes direct
-    // to the ALB. CloudFront buffers responses which breaks SSE.
+    // SSE and WebSocket connections are routed through CloudFront to avoid
+    // mixed-content errors (HTTPS page → HTTP/WS backend). CloudFront
+    // supports streaming responses and WebSocket upgrade when caching is
+    // disabled and the correct origin request policy is used.
     // ------------------------------------------------------------------ //
 
     // CloudFront Function: rewrite clean URLs to index.html.
@@ -129,6 +138,37 @@ function handler(event) {
           viewerProtocolPolicy:
             cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
           allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
+          cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+          originRequestPolicy:
+            cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+        },
+        "/chat/*": {
+          origin: apiOrigin,
+          viewerProtocolPolicy:
+            cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
+          cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+          originRequestPolicy:
+            cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+        },
+        // SSE stream — routed to ALB. Caching disabled so CloudFront
+        // passes the chunked response through without buffering.
+        "/stream/*": {
+          origin: albOrigin,
+          viewerProtocolPolicy:
+            cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
+          cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+          originRequestPolicy:
+            cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+        },
+        // WebSocket chat — routed to ALB. CloudFront supports WebSocket
+        // upgrade when caching is disabled.
+        "/ws/*": {
+          origin: albOrigin,
+          viewerProtocolPolicy:
+            cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
           cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
           originRequestPolicy:
             cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
