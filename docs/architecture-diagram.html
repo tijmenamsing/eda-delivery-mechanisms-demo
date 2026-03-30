@@ -36,7 +36,7 @@
         display: flex;
         align-items: center;
         gap: 14px;
-        margin-bottom: 4px;
+        margin-bottom: 15px;
       }
       .header img {
         height: 34px;
@@ -137,8 +137,8 @@
       /* ── Diagram ── */
       .diagram {
         position: relative;
-        width: 1100px;
-        height: 620px;
+        width: 1160px;
+        height: 720px;
         flex-shrink: 0;
         border-radius: 18px;
         border: 1px solid rgba(255, 255, 255, 0.06);
@@ -162,8 +162,8 @@
       .node {
         position: absolute;
         transform: translate(-50%, -50%);
-        width: 130px;
-        height: 62px;
+        width: 155px;
+        height: 76px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -172,7 +172,7 @@
         border: 1.5px solid rgba(255, 255, 255, 0.1);
         border-radius: 12px;
         background: rgba(255, 255, 255, 0.03);
-        font-size: 0.7rem;
+        font-size: 0.85rem;
         font-weight: 600;
         color: rgba(255, 255, 255, 0.45);
         transition: all 0.35s ease;
@@ -180,32 +180,32 @@
         user-select: none;
       }
       .node img {
-        width: 22px;
-        height: 22px;
+        width: 28px;
+        height: 28px;
         object-fit: contain;
         opacity: 0.45;
         transition: opacity 0.35s ease;
         filter: grayscale(30%);
       }
       .node .node-label {
-        font-size: 0.65rem;
+        font-size: 0.8rem;
         white-space: nowrap;
       }
       .node .node-sublabel {
-        font-size: 0.55rem;
+        font-size: 0.68rem;
         color: rgba(255, 255, 255, 0.3);
       }
 
       /* Browser nodes are a bit different — no AWS icon */
       .node.browser-node {
-        width: 120px;
-        height: 56px;
+        width: 145px;
+        height: 68px;
       }
       .node.browser-node .node-ico {
-        font-size: 1.1rem;
+        font-size: 1.35rem;
       }
       .node.browser-node .node-role {
-        font-size: 0.55rem;
+        font-size: 0.68rem;
         color: rgba(255, 255, 255, 0.3);
       }
 
@@ -247,7 +247,7 @@
       }
       .vpc-label {
         position: absolute;
-        font-size: 0.58rem;
+        font-size: 0.7rem;
         font-weight: 700;
         color: rgba(255, 255, 255, 0.15);
         letter-spacing: 0.16em;
@@ -262,7 +262,7 @@
         bottom: 12px;
         right: 14px;
         font-family: "JetBrains Mono", monospace;
-        font-size: 0.62rem;
+        font-size: 0.72rem;
         color: rgba(255, 255, 255, 0.18);
         z-index: 10;
         pointer-events: none;
@@ -276,7 +276,7 @@
         top: 12px;
         right: 14px;
         font-family: "JetBrains Mono", monospace;
-        font-size: 0.62rem;
+        font-size: 0.72rem;
         color: rgba(255, 255, 255, 0.22);
         z-index: 10;
         pointer-events: none;
@@ -284,19 +284,19 @@
 
       /* ── Log panel ── */
       .log-panel {
-        width: 280px;
+        width: 310px;
         flex-shrink: 0;
         background: rgba(255, 255, 255, 0.02);
         border: 1px solid rgba(255, 255, 255, 0.06);
         border-radius: 18px;
         padding: 14px;
-        height: 620px;
+        height: 720px;
         display: flex;
         flex-direction: column;
         gap: 0;
       }
       .log-panel-header {
-        font-size: 0.62rem;
+        font-size: 0.72rem;
         font-weight: 700;
         color: rgba(255, 255, 255, 0.25);
         letter-spacing: 0.14em;
@@ -364,12 +364,12 @@
         background: var(--glow, rgba(255, 255, 255, 0.3));
       }
       .log-text {
-        font-size: 0.71rem;
+        font-size: 0.84rem;
         line-height: 1.4;
         color: rgba(255, 255, 255, 0.75);
       }
       .log-empty {
-        font-size: 0.68rem;
+        font-size: 0.78rem;
         color: rgba(255, 255, 255, 0.2);
         font-family: "JetBrains Mono", monospace;
         text-align: center;
@@ -404,21 +404,18 @@
         src="https://bbtg.com/assets/bbtg-logo-550x190-f846a0b3.png"
         alt="BBTG"
       />
-      <h1>System Architecture</h1>
+      <h1>Systeemarchitectuur</h1>
     </div>
-    <p class="subtitle">
-      BBTG Nieuws — Event-Driven Delivery Mechanisms on AWS
-    </p>
 
     <div class="controls">
       <button class="flow-btn polling" onclick="startFlow('polling')">
-        🔄 Polling
+        Polling
       </button>
       <button class="flow-btn sse" onclick="startFlow('sse')">
-        📡 Server-Sent Events
+        Server-Sent Events
       </button>
       <button class="flow-btn websocket" onclick="startFlow('websocket')">
-        💬 WebSocket
+        WebSocket
       </button>
     </div>
     <p class="flow-desc" id="flowDesc">&nbsp;</p>
@@ -429,29 +426,17 @@
         <svg class="diagram-svg" id="svg"></svg>
         <div class="step-counter" id="stepCounter"></div>
         <div class="diagram-hints" id="diagHints" style="opacity: 0">
-          Space / → &nbsp;advance<br />
-          ← &nbsp;go back<br />
+          Spatie / → &nbsp;volgende stap<br />
+          ← &nbsp;vorige stap<br />
           Esc &nbsp;reset
         </div>
       </div>
 
       <div class="log-panel">
-        <div class="log-panel-header">📋 Flow log</div>
+        <div class="log-panel-header">Stap log</div>
         <div class="log-entries" id="logEntries">
-          <p class="log-empty">Select a flow to begin</p>
+          <p class="log-empty">Selecteer een flow om te beginnen</p>
         </div>
-      </div>
-    </div>
-
-    <div class="legend">
-      <div class="legend-item">
-        <span class="legend-dot" style="background: #ff6b00"></span> Polling
-      </div>
-      <div class="legend-item">
-        <span class="legend-dot" style="background: #2ecc71"></span> SSE
-      </div>
-      <div class="legend-item">
-        <span class="legend-dot" style="background: #3498db"></span> WebSocket
       </div>
     </div>
 
@@ -480,8 +465,8 @@
       // LAYOUT DATA
       // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-      const NW = 130,
-        NH = 62; // node width/height
+      const NW = 155,
+        NH = 76; // node width/height
 
       const nodes = [
         {
@@ -490,15 +475,15 @@
           ico: "✍️",
           label: "Author",
           sublabel: "Journalist",
-          x: 165,
-          y: 55,
+          x: 180,
+          y: 60,
         },
         {
           id: "cloudfront",
           ico: ICONS.cloudfront,
           label: "CloudFront",
-          x: 550,
-          y: 55,
+          x: 580,
+          y: 60,
         },
         {
           id: "visitor",
@@ -506,57 +491,57 @@
           ico: "👁",
           label: "Visitor",
           sublabel: "Reader",
-          x: 935,
-          y: 55,
+          x: 980,
+          y: 60,
         },
-        { id: "s3", ico: ICONS.s3, label: "S3", x: 130, y: 215 },
-        { id: "apigw", ico: ICONS.apigw, label: "API Gateway", x: 380, y: 215 },
-        { id: "alb", ico: ICONS.alb, label: "ALB", x: 795, y: 215 },
+        { id: "s3", ico: ICONS.s3, label: "S3", x: 140, y: 240 },
+        { id: "apigw", ico: ICONS.apigw, label: "API Gateway", x: 400, y: 240 },
+        { id: "alb", ico: ICONS.alb, label: "ALB", x: 840, y: 240 },
         {
           id: "lambda",
           ico: ICONS.lambda,
           label: "Lambda",
           sublabel: "Authoring",
-          x: 290,
-          y: 375,
+          x: 310,
+          y: 420,
         },
         {
           id: "ecs",
           ico: ICONS.ecs,
           label: "ECS Fargate",
           sublabel: "SSE + WS",
-          x: 795,
-          y: 375,
+          x: 840,
+          y: 420,
         },
         {
           id: "dynamodb",
           ico: ICONS.dynamodb,
           label: "DynamoDB",
-          x: 130,
-          y: 535,
+          x: 140,
+          y: 610,
         },
         {
           id: "eventbridge",
           ico: ICONS.eventbridge,
           label: "EventBridge",
-          x: 370,
-          y: 535,
+          x: 390,
+          y: 610,
         },
         {
           id: "consumer",
           ico: ICONS.lambda,
           label: "Lambda",
           sublabel: "Consumer",
-          x: 570,
-          y: 535,
+          x: 610,
+          y: 610,
         },
         {
           id: "redis",
           ico: ICONS.redis,
           label: "ElastiCache",
           sublabel: "Redis",
-          x: 795,
-          y: 535,
+          x: 840,
+          y: 610,
         },
       ];
 
@@ -631,7 +616,7 @@
       ];
 
       // VPC boundary around ALB, ECS, Consumer, Redis
-      const vpcBox = { x: 540, y: 186, w: 380, h: 380, r: 16 };
+      const vpcBox = { x: 725, y: 196, w: 360, h: 460, r: 16 };
 
       // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       // FLOW COLORS & DESCRIPTIONS
@@ -643,11 +628,11 @@
         websocket: "#3498DB",
       };
 
-      const DESCS = {
-        polling: "Author publishes — visitor reads on next 60s poll",
-        sse: "Author publishes — visitor receives instantly via SSE push",
+            const DESCS = {
+        polling: "Auteur publiceert — bezoeker leest bij de volgende poll (60s)",
+        sse: "Auteur publiceert — bezoeker ontvangt direct via SSE",
         websocket:
-          "Author sends message — both author and visitor see it via WebSocket",
+          "Auteur stuurt bericht — auteur en bezoeker zien het direct via WebSocket",
       };
 
       // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -661,202 +646,200 @@
           {
             nodes: ["author"],
             edges: [],
-            label: "✏️  Author writes and publishes an article",
+            label: "Auteur schrijft en publiceert een artikel",
           },
           {
             nodes: ["cloudfront"],
             edges: ["author-cf"],
-            label: "→  Via CloudFront",
+            label: "Verzoek via CloudFront",
           },
           {
             nodes: ["apigw"],
             edges: ["cf-apigw"],
-            label: "📨  POST /articles → API Gateway",
+            label: "POST /articles naar API Gateway",
           },
           {
             nodes: ["lambda"],
             edges: ["apigw-lambda"],
-            label: "⚡  Authoring Lambda invoked",
+            label: "Authoring Lambda wordt aangeroepen",
           },
           {
             nodes: ["dynamodb"],
             edges: ["lambda-dynamo"],
-            label: "💾  Article stored in DynamoDB",
+            label: "Artikel opgeslagen in DynamoDB",
           },
           {
             clear: true,
             nodes: ["visitor"],
             edges: [],
-            label: "⏱  60 seconds pass — visitor's browser polls…",
+            label: "60 seconden later — browser van de bezoeker pollt",
           },
           {
             nodes: ["cloudfront"],
             edges: ["visitor-cf"],
-            label: "→  GET /articles via CloudFront",
+            label: "GET /articles via CloudFront",
           },
           {
             nodes: ["apigw"],
             edges: ["cf-apigw"],
-            label: "📡  Routed to API Gateway",
+            label: "Doorgestuurd naar API Gateway",
           },
           {
             nodes: ["lambda"],
             edges: ["apigw-lambda"],
-            label: "⚡  Lambda fetches from DynamoDB",
+            label: "Lambda haalt artikelen op uit DynamoDB",
           },
           {
             nodes: ["dynamodb"],
             edges: ["lambda-dynamo"],
-            label: "📰  New article returned to visitor — after a delay",
+            label: "Nieuw artikel zichtbaar voor bezoeker — na vertraging",
           },
         ],
         sse: [
           {
             nodes: ["visitor"],
             edges: [],
-            label: "👁  Visitor opens live blog — SSE connection opens",
+            label: "Bezoeker opent live blog — SSE-verbinding wordt geopend",
           },
           {
             nodes: ["cloudfront"],
             edges: ["visitor-cf"],
-            label: "→  Connection via CloudFront",
+            label: "Verbinding via CloudFront",
           },
           {
             nodes: ["alb"],
             edges: ["cf-alb"],
-            label: "↗️  ALB routes to ECS Fargate",
+            label: "ALB stuurt door naar ECS Fargate",
           },
           {
             nodes: ["ecs"],
             edges: ["ecs-alb"],
-            label: "📡  Persistent SSE stream established on ECS",
+            label: "Persistente SSE-stroom tot stand gebracht op ECS",
           },
           {
             clear: true,
             nodes: ["author"],
             edges: [],
-            label: "✏️  Author posts a live update",
+            label: "Auteur plaatst een live update",
           },
           {
             nodes: ["cloudfront"],
             edges: ["author-cf"],
-            label: "→  Via CloudFront",
+            label: "Verzoek via CloudFront",
           },
           {
             nodes: ["apigw"],
             edges: ["cf-apigw"],
-            label: "📨  POST /updates → API Gateway",
+            label: "POST /updates naar API Gateway",
           },
           {
             nodes: ["lambda"],
             edges: ["apigw-lambda"],
-            label: "⚡  Authoring Lambda invoked",
+            label: "Authoring Lambda wordt aangeroepen",
           },
           {
             nodes: ["dynamodb"],
             edges: ["lambda-dynamo"],
-            label: "💾  Update stored in DynamoDB",
+            label: "Update opgeslagen in DynamoDB",
           },
           {
             nodes: ["eventbridge"],
             edges: ["lambda-eb"],
-            label: "⚡  UpdatePosted event → EventBridge",
+            label: "UpdatePosted event gepubliceerd naar EventBridge",
           },
           {
             nodes: ["consumer"],
             edges: ["eb-consumer"],
-            label: "🔗  Consumer Lambda triggered by event rule",
+            label: "Consumer Lambda getriggerd door event rule",
           },
           {
             nodes: ["redis"],
             edges: ["consumer-redis"],
-            label: "📢  Published to Redis channel blog:<id>:updates",
+            label: "Gepubliceerd op Redis channel blog:<id>:updates",
           },
           {
             nodes: ["ecs"],
             edges: ["redis-ecs"],
-            label: "📡  ECS SSE server receives via Redis subscription",
+            label: "ECS ontvangt update via Redis-abonnement",
           },
           {
             nodes: ["alb"],
             edges: ["ecs-alb"],
-            label: "↗️  ECS pushes through ALB",
+            label: "ECS stuurt door via ALB",
           },
           {
             nodes: ["cloudfront"],
             edges: ["cf-alb"],
-            label: "☁️  Via CloudFront",
+            label: "Via CloudFront naar de browser",
           },
           {
             nodes: ["visitor"],
             edges: ["visitor-cf"],
-            label: "🟢  Visitor sees update instantly — no polling needed!",
+            label: "Bezoeker ziet update direct — zonder polling!",
           },
         ],
         websocket: [
           {
             nodes: ["author", "visitor"],
             edges: [],
-            label:
-              "🔗  Both author and visitor have WebSocket connections open",
+            label: "Auteur en bezoeker hebben beiden een WebSocket-verbinding open",
           },
           {
             nodes: ["cloudfront"],
             edges: ["author-cf", "visitor-cf"],
-            label: "→  Connections via CloudFront",
+            label: "Verbindingen via CloudFront",
           },
           {
             nodes: ["alb"],
             edges: ["cf-alb"],
-            label: "↗️  ALB maintains persistent WS connections",
+            label: "ALB onderhoudt persistente WebSocket-verbindingen",
           },
           {
             nodes: ["ecs"],
             edges: ["ecs-alb"],
-            label: "🐳  ECS Fargate handles WebSocket sessions",
+            label: "ECS Fargate beheert de WebSocket-sessies",
           },
           {
             clear: true,
             nodes: ["author"],
             edges: [],
-            label: "💬  Author sends a chat message",
+            label: "Auteur verstuurt een chatbericht",
           },
           {
             nodes: ["cloudfront"],
             edges: ["author-cf"],
-            label: "→  Via CloudFront",
+            label: "Bericht via CloudFront",
           },
-          { nodes: ["alb"], edges: ["cf-alb"], label: "↗️  ALB routes to ECS" },
+          { nodes: ["alb"], edges: ["cf-alb"], label: "ALB stuurt door naar ECS" },
           {
             nodes: ["ecs"],
             edges: ["ecs-alb"],
-            label: "🐳  ECS receives message via WebSocket",
+            label: "ECS ontvangt bericht via WebSocket",
           },
           {
             nodes: ["redis"],
             edges: ["redis-ecs"],
-            label: "📢  ECS publishes to Redis for fan-out to all instances",
+            label: "ECS publiceert naar Redis voor fan-out naar alle instanties",
           },
           {
             nodes: [],
             edges: ["redis-ecs"],
-            label:
-              "⚡  All ECS nodes subscribe — every instance gets the message",
+            label: "Alle ECS-nodes ontvangen het bericht via Redis",
           },
           {
             nodes: ["alb"],
             edges: ["ecs-alb"],
-            label: "↗️  Each ECS node pushes to its connected clients",
+            label: "Elke ECS-node stuurt door naar verbonden clients",
           },
           {
             nodes: ["cloudfront"],
             edges: ["cf-alb"],
-            label: "☁️  Via CloudFront",
+            label: "Via CloudFront",
           },
           {
             nodes: ["author", "visitor"],
             edges: ["author-cf", "visitor-cf"],
-            label: "🟢  Both author and visitor see the message immediately",
+            label: "Auteur en bezoeker zien het bericht direct",
           },
         ],
       };
@@ -976,7 +959,7 @@
           entry.className =
             "log-entry" + (i === targetIndex ? " current" : " past");
           entry.style.setProperty("--glow", color);
-          entry.innerHTML = `<div class="log-dot"></div><div class="log-text">${step.label}</div>`;
+          entry.innerHTML = `<div class="log-text">${step.label}</div>`;
           logEntries.appendChild(entry);
         }
         // Auto-scroll to bottom
@@ -1017,8 +1000,8 @@
         stepCounter.textContent = `${index + 1} / ${steps.length}`;
         buildDots(steps.length, index);
         diagHints.innerHTML = isLast
-          ? "Esc &nbsp;reset &nbsp;|&nbsp; ← go back"
-          : "Space / → &nbsp;advance &nbsp;|&nbsp; ← back &nbsp;|&nbsp; Esc reset";
+          ? "Esc &nbsp;reset &nbsp;|&nbsp; ← terug"
+          : "Spatie / → &nbsp;volgende &nbsp;|&nbsp; ← terug &nbsp;|&nbsp; Esc reset";
         diagHints.style.opacity = "1";
       }
 
