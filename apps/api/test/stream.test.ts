@@ -7,6 +7,7 @@ vi.mock("../src/lib/env.js", () => ({
   env: {
     REDIS_URL: "redis://localhost:6379",
     NODE_ENV: "test",
+    UPDATES_TABLE: "test-updates",
   },
 }));
 
@@ -27,6 +28,11 @@ vi.mock("../src/lib/redis.js", () => ({
   }),
 }));
 
+vi.mock("../src/lib/dynamo.js", () => ({
+  getItem: vi.fn().mockResolvedValue(null),
+  queryItems: vi.fn().mockResolvedValue([]),
+}));
+
 vi.mock("../src/lib/logger.js", () => ({
   logger: {
     info: vi.fn(),
@@ -45,6 +51,7 @@ vi.mock("../src/lib/logger.js", () => ({
 function collectSSE(
   server: http.Server,
   path: string,
+  headers?: Record<string, string>,
 ): Promise<{ headers: http.IncomingHttpHeaders; body: string }> {
   return new Promise((resolve, reject) => {
     const address = server.address();
@@ -54,7 +61,7 @@ function collectSSE(
     }
 
     const req = http.get(
-      `http://127.0.0.1:${address.port}${path}`,
+      { hostname: "127.0.0.1", port: (address as { port: number }).port, path, headers },
       (res) => {
         let body = "";
         res.on("data", (chunk: Buffer) => {
@@ -83,7 +90,11 @@ describe("Stream routes", () => {
   let server: http.Server;
 
   beforeEach(() => {
+    // Reset call counts but preserve mock implementations
     vi.clearAllMocks();
+    mockSubscribe.mockResolvedValue(undefined);
+    mockUnsubscribe.mockResolvedValue(undefined);
+
     app = express();
     app.use("/stream", createStreamRouter());
     server = app.listen(0);
@@ -91,7 +102,6 @@ describe("Stream routes", () => {
 
   afterEach(() => {
     server.close();
-    vi.restoreAllMocks();
   });
 
   describe("GET /stream/:blogId", () => {
@@ -103,9 +113,10 @@ describe("Stream routes", () => {
       expect(headers["connection"]).toBe("keep-alive");
     });
 
-    it("sends connected event on open", async () => {
+    it("sends connected event with retry field on open", async () => {
       const { body } = await collectSSE(server, "/stream/test-blog-id");
 
+      expect(body).toContain("retry: 3000");
       expect(body).toContain("event: connected");
       expect(body).toContain('"blogId":"test-blog-id"');
     });

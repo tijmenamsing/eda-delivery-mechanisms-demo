@@ -96,6 +96,29 @@ async function main(): Promise<void> {
     ],
   );
 
+  const chatMessagesTable =
+    process.env["CHAT_MESSAGES_TABLE"] ?? "dev-chat-messages";
+
+  await createTable(
+    chatMessagesTable,
+    [{ AttributeName: "messageId", KeyType: "HASH" }],
+    [
+      { AttributeName: "messageId", AttributeType: "S" },
+      { AttributeName: "blogId", AttributeType: "S" },
+      { AttributeName: "postedAt", AttributeType: "S" },
+    ],
+    [
+      {
+        IndexName: "blogId-postedAt-index",
+        KeySchema: [
+          { AttributeName: "blogId", KeyType: "HASH" },
+          { AttributeName: "postedAt", KeyType: "RANGE" },
+        ],
+        Projection: { ProjectionType: "ALL" },
+      },
+    ],
+  );
+
   console.log("\n✅ All tables initialized\n");
 }
 

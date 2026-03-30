@@ -51,6 +51,7 @@ const apiStack = new ApiStack(app, `${prefix}-api`, {
   articlesTable: dataStack.articlesTable,
   blogsTable: dataStack.blogsTable,
   updatesTable: dataStack.updatesTable,
+  chatMessagesTable: dataStack.chatMessagesTable,
   redisCluster: dataStack.redisCluster,
 });
 

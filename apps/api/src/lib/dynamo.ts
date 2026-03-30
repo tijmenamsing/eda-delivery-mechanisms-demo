@@ -15,8 +15,6 @@ import { env } from "./env.js";
 // On Lambda/ECS the SDK credential chain reads AWS_ACCESS_KEY_ID +
 // AWS_SECRET_ACCESS_KEY + AWS_SESSION_TOKEN from the runtime environment,
 // which includes the required session token for assumed roles.
-// Manually constructing credentials without the session token causes
-// "UnrecognizedClientException: The security token included in the request is invalid."
 const clientConfig: DynamoDBClientConfig = {
   region: env.AWS_REGION,
   ...(env.DYNAMODB_ENDPOINT

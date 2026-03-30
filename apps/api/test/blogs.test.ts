@@ -56,7 +56,7 @@ describe("Blogs routes", () => {
           title: "Live: BBTG Kennisfestival 2026",
           eventName: "BBTG Kennisfestival 2026",
           eventDate: "2026-04-15",
-          eventLocation: "Leusden",
+          eventLocation: "Zeist",
           status: "active",
           createdAt: "2026-04-15T00:00:00.000Z",
         },
@@ -77,7 +77,7 @@ describe("Blogs routes", () => {
         title: "Live: BBTG Kennisfestival 2026",
         eventName: "BBTG Kennisfestival 2026",
         eventDate: "2026-04-15",
-        eventLocation: "Leusden",
+        eventLocation: "Zeist",
         status: "active",
         createdAt: "2026-04-15T00:00:00.000Z",
       };
@@ -104,9 +104,7 @@ describe("Blogs routes", () => {
     it("returns 404 if blog not found", async () => {
       mockGetItem.mockResolvedValue(null);
 
-      const res = await request(app)
-        .get("/blogs/nonexistent")
-        .expect(404);
+      const res = await request(app).get("/blogs/nonexistent").expect(404);
 
       expect(res.body.error.code).toBe("NOT_FOUND");
     });

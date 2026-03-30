@@ -12,6 +12,7 @@ export interface AuthoringFunctionProps {
   readonly articlesTable: dynamodb.ITable;
   readonly blogsTable: dynamodb.ITable;
   readonly updatesTable: dynamodb.ITable;
+  readonly chatMessagesTable: dynamodb.ITable;
   readonly eventBus: events.IEventBus;
   readonly environment: string;
   readonly redisUrl: string;
@@ -52,6 +53,7 @@ export class AuthoringFunction extends cdk.Resource {
         ARTICLES_TABLE: props.articlesTable.tableName,
         BLOGS_TABLE: props.blogsTable.tableName,
         UPDATES_TABLE: props.updatesTable.tableName,
+        CHAT_MESSAGES_TABLE: props.chatMessagesTable.tableName,
         EVENT_PUBLISHER: "eventbridge",
         EVENTBRIDGE_BUS_NAME: props.eventBus.eventBusName,
         ALLOWED_ORIGIN: "*",
@@ -75,6 +77,7 @@ export class AuthoringFunction extends cdk.Resource {
     props.articlesTable.grantReadWriteData(fn);
     props.blogsTable.grantReadWriteData(fn);
     props.updatesTable.grantReadWriteData(fn);
+    props.chatMessagesTable.grantReadData(fn);
 
     // Grant EventBridge put events
     props.eventBus.grantPutEventsTo(fn);
