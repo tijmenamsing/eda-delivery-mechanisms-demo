@@ -23,33 +23,42 @@ function createTestDataStack(): Template {
 }
 
 describe("DataStack", () => {
-  it("creates four DynamoDB tables", () => {
+  it("creates seven DynamoDB tables (3 editorial + 4 delivery)", () => {
     const template = createTestDataStack();
-    template.resourceCountIs("AWS::DynamoDB::Table", 4);
+    template.resourceCountIs("AWS::DynamoDB::Table", 7);
   });
 
-  it("articles table has correct key schema", () => {
+  it("editorial-articles table has correct key schema", () => {
     const template = createTestDataStack();
     template.hasResourceProperties("AWS::DynamoDB::Table", {
-      TableName: "test-articles",
+      TableName: "test-editorial-articles",
       KeySchema: [{ AttributeName: "articleId", KeyType: "HASH" }],
       BillingMode: "PAY_PER_REQUEST",
     });
   });
 
-  it("blogs table has correct key schema", () => {
+  it("delivery-articles table has correct key schema", () => {
     const template = createTestDataStack();
     template.hasResourceProperties("AWS::DynamoDB::Table", {
-      TableName: "test-blogs",
+      TableName: "test-delivery-articles",
+      KeySchema: [{ AttributeName: "articleId", KeyType: "HASH" }],
+      BillingMode: "PAY_PER_REQUEST",
+    });
+  });
+
+  it("editorial-blogs table has correct key schema", () => {
+    const template = createTestDataStack();
+    template.hasResourceProperties("AWS::DynamoDB::Table", {
+      TableName: "test-editorial-blogs",
       KeySchema: [{ AttributeName: "blogId", KeyType: "HASH" }],
       BillingMode: "PAY_PER_REQUEST",
     });
   });
 
-  it("updates table has a GSI for blogId-postedAt", () => {
+  it("delivery-updates table has a GSI for blogId-postedAt", () => {
     const template = createTestDataStack();
     template.hasResourceProperties("AWS::DynamoDB::Table", {
-      TableName: "test-updates",
+      TableName: "test-delivery-updates",
       KeySchema: [{ AttributeName: "updateId", KeyType: "HASH" }],
       GlobalSecondaryIndexes: [
         {

@@ -9,10 +9,13 @@ import type { Construct } from "constructs";
 
 export interface AuthoringFunctionProps {
   readonly vpc: ec2.IVpc;
-  readonly articlesTable: dynamodb.ITable;
-  readonly blogsTable: dynamodb.ITable;
-  readonly updatesTable: dynamodb.ITable;
-  readonly chatMessagesTable: dynamodb.ITable;
+  readonly editorialArticlesTable: dynamodb.ITable;
+  readonly editorialBlogsTable: dynamodb.ITable;
+  readonly editorialUpdatesTable: dynamodb.ITable;
+  readonly deliveryArticlesTable: dynamodb.ITable;
+  readonly deliveryBlogsTable: dynamodb.ITable;
+  readonly deliveryUpdatesTable: dynamodb.ITable;
+  readonly deliveryChatMessagesTable: dynamodb.ITable;
   readonly eventBus: events.IEventBus;
   readonly environment: string;
   readonly redisUrl: string;
@@ -21,6 +24,7 @@ export interface AuthoringFunctionProps {
 /**
  * Lambda function that hosts the Express CRUD API via `serverless-http`.
  * API Gateway HTTP API routes (articles, blogs, updates) all land here.
+ * Needs access to both editorial (write) and delivery (read) tables.
  */
 export class AuthoringFunction extends cdk.Resource {
   public readonly function: lambda.IFunction;
@@ -50,19 +54,20 @@ export class AuthoringFunction extends cdk.Resource {
         NODE_ENV: "production",
         PORT: "3001",
         REDIS_URL: props.redisUrl,
-        ARTICLES_TABLE: props.articlesTable.tableName,
-        BLOGS_TABLE: props.blogsTable.tableName,
-        UPDATES_TABLE: props.updatesTable.tableName,
-        CHAT_MESSAGES_TABLE: props.chatMessagesTable.tableName,
+        EDITORIAL_ARTICLES_TABLE: props.editorialArticlesTable.tableName,
+        EDITORIAL_BLOGS_TABLE: props.editorialBlogsTable.tableName,
+        EDITORIAL_UPDATES_TABLE: props.editorialUpdatesTable.tableName,
+        DELIVERY_ARTICLES_TABLE: props.deliveryArticlesTable.tableName,
+        DELIVERY_BLOGS_TABLE: props.deliveryBlogsTable.tableName,
+        DELIVERY_UPDATES_TABLE: props.deliveryUpdatesTable.tableName,
+        DELIVERY_CHAT_MESSAGES_TABLE: props.deliveryChatMessagesTable.tableName,
         EVENT_PUBLISHER: "eventbridge",
         EVENTBRIDGE_BUS_NAME: props.eventBus.eventBusName,
         ALLOWED_ORIGIN: "*",
       },
       bundling: {
-        // esbuild converts ESM source to CJS for the Lambda runtime
         format: lambdaNode.OutputFormat.CJS,
         mainFields: ["module", "main"],
-        // AWS SDK v3 is available in the Lambda runtime — no need to bundle it
         externalModules: [
           "@aws-sdk/client-dynamodb",
           "@aws-sdk/client-eventbridge",
@@ -73,11 +78,16 @@ export class AuthoringFunction extends cdk.Resource {
       depsLockFilePath: path.join(__dirname, "../../../pnpm-lock.yaml"),
     });
 
-    // Grant DynamoDB access
-    props.articlesTable.grantReadWriteData(fn);
-    props.blogsTable.grantReadWriteData(fn);
-    props.updatesTable.grantReadWriteData(fn);
-    props.chatMessagesTable.grantReadData(fn);
+    // Grant editorial tables read/write (authoring writes)
+    props.editorialArticlesTable.grantReadWriteData(fn);
+    props.editorialBlogsTable.grantReadWriteData(fn);
+    props.editorialUpdatesTable.grantReadWriteData(fn);
+
+    // Grant delivery tables read access (GET endpoints serve from delivery)
+    props.deliveryArticlesTable.grantReadData(fn);
+    props.deliveryBlogsTable.grantReadData(fn);
+    props.deliveryUpdatesTable.grantReadData(fn);
+    props.deliveryChatMessagesTable.grantReadData(fn);
 
     // Grant EventBridge put events
     props.eventBus.grantPutEventsTo(fn);

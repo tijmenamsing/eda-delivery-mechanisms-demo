@@ -7,7 +7,8 @@ import type { EventPublisher } from "../src/lib/events/publisher.interface.js";
 
 vi.mock("../src/lib/env.js", () => ({
   env: {
-    ARTICLES_TABLE: "test-articles",
+    EDITORIAL_ARTICLES_TABLE: "test-editorial-articles",
+    DELIVERY_ARTICLES_TABLE: "test-delivery-articles",
     NODE_ENV: "test",
   },
 }));

@@ -17,9 +17,57 @@
         box-sizing: border-box;
       }
 
+      /* ── Design tokens — dark (default) ── */
+      :root {
+        --bg: #0f1115;
+        --surface: rgba(255, 255, 255, 0.02);
+        --surface-alt: rgba(255, 255, 255, 0.03);
+        --border: rgba(255, 255, 255, 0.28);
+        --border-subtle: rgba(255, 255, 255, 0.18);
+        --border-faint: rgba(255, 255, 255, 0.12);
+        --text: #ffffff;
+        --text-muted: rgba(255, 255, 255, 0.45);
+        --text-dim: rgba(255, 255, 255, 0.6);
+        --text-faint: rgba(255, 255, 255, 0.18);
+        --img-opacity: 0.45;
+        --img-filter: grayscale(30%);
+        --dot-idle: rgba(255, 255, 255, 0.1);
+        --dot-done: rgba(255, 255, 255, 0.3);
+        --node-glow-bg: rgba(15, 17, 21, 0.95);
+        --edge-idle: rgba(255, 255, 255, 0.22);
+        --scrollbar: rgba(255, 255, 255, 0.1);
+        --active-text: #0f1115;
+        --logo-filter: none;
+        --box-bg: rgba(255, 255, 255, 0.04);
+      }
+
+      /* ── Design tokens — light ── */
+      .light {
+        --bg: #f0f2f5;
+        --surface: rgba(0, 0, 0, 0.02);
+        --surface-alt: rgba(0, 0, 0, 0.03);
+        --border: rgba(0, 0, 0, 0.28);
+        --border-subtle: rgba(0, 0, 0, 0.2);
+        --border-faint: rgba(0, 0, 0, 0.14);
+        --text: #0f1115;
+        --text-muted: rgba(0, 0, 0, 0.5);
+        --text-dim: rgba(0, 0, 0, 0.55);
+        --text-faint: rgba(0, 0, 0, 0.25);
+        --img-opacity: 0.7;
+        --img-filter: none;
+        --dot-idle: rgba(0, 0, 0, 0.12);
+        --dot-done: rgba(0, 0, 0, 0.3);
+        --node-glow-bg: rgba(255, 255, 255, 0.95);
+        --edge-idle: rgba(0, 0, 0, 0.22);
+        --scrollbar: rgba(0, 0, 0, 0.12);
+        --active-text: #ffffff;
+        --logo-filter: none;
+        --box-bg: rgba(0, 0, 0, 0.04);
+      }
+
       body {
-        background: #0f1115;
-        color: #fff;
+        background: var(--bg);
+        color: var(--text);
         font-family:
           "Syne",
           system-ui,
@@ -28,47 +76,95 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        min-height: 100vh;
-        padding: 20px 20px 40px;
+        height: 100dvh;
+        overflow: hidden;
+        padding: 10px 16px 10px;
+        transition:
+          background 0.3s,
+          color 0.3s;
       }
 
       .header {
         display: flex;
         align-items: center;
-        gap: 14px;
-        margin-bottom: 15px;
+        gap: 12px;
+        margin-bottom: 8px;
       }
       .header img {
-        height: 34px;
+        height: 30px;
+        filter: var(--logo-filter);
       }
       .header h1 {
-        font-size: 1.4rem;
+        font-size: 1.5rem;
         font-weight: 800;
         letter-spacing: -0.02em;
       }
 
       .subtitle {
-        font-size: 0.7rem;
-        color: rgba(255, 255, 255, 0.4);
-        margin-bottom: 20px;
-        font-family: "JetBrains Mono", monospace;
-        letter-spacing: 0.04em;
+        display: none;
+      }
+
+      /* ── Theme toggle ── */
+      .theme-toggle {
+        margin-left: 8px;
+        width: 44px;
+        height: 24px;
+        border-radius: 12px;
+        border: 1.5px solid var(--border);
+        background: var(--surface-alt);
+        cursor: pointer;
+        position: relative;
+        transition:
+          background 0.25s,
+          border-color 0.25s;
+        flex-shrink: 0;
+      }
+      .theme-toggle::after {
+        content: "";
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--text-muted);
+        transition:
+          transform 0.25s,
+          background 0.25s;
+      }
+      .light .theme-toggle::after {
+        transform: translateX(20px);
+        background: var(--text-muted);
+      }
+      .theme-toggle-icon {
+        position: absolute;
+        font-size: 0.65rem;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        line-height: 1;
+      }
+      .theme-toggle-icon.moon {
+        left: 5px;
+      }
+      .theme-toggle-icon.sun {
+        right: 5px;
       }
 
       .controls {
         display: flex;
         gap: 10px;
-        margin-bottom: 10px;
+        margin-bottom: 6px;
       }
 
       .flow-btn {
-        padding: 9px 22px;
+        padding: 9px 26px;
         border: 2px solid var(--btn-color);
         border-radius: 12px;
-        background: rgba(255, 255, 255, 0.02);
+        background: transparent;
         color: var(--btn-color);
         font-family: "Syne", system-ui, sans-serif;
-        font-size: 0.82rem;
+        font-size: 0.95rem;
         font-weight: 700;
         cursor: pointer;
         transition: all 0.22s ease;
@@ -80,26 +176,26 @@
       }
       .flow-btn.active {
         background: var(--btn-color);
-        color: #0f1115;
+        color: var(--active-text);
         box-shadow: 0 0 20px
           color-mix(in srgb, var(--btn-color) 40%, transparent);
       }
       .flow-btn.polling {
-        --btn-color: #ff6b00;
+        --btn-color: #e05e00;
       }
       .flow-btn.sse {
-        --btn-color: #2ecc71;
+        --btn-color: #1fa855;
       }
       .flow-btn.websocket {
-        --btn-color: #3498db;
+        --btn-color: #1a7cc2;
       }
 
       .flow-desc {
-        font-size: 0.72rem;
-        color: rgba(255, 255, 255, 0.35);
+        font-size: 0.82rem;
+        color: var(--text-dim);
         font-family: "JetBrains Mono", monospace;
-        min-height: 1.4em;
-        margin-bottom: 8px;
+        min-height: 1.3em;
+        margin-bottom: 5px;
         text-align: center;
       }
 
@@ -107,45 +203,59 @@
         display: flex;
         gap: 5px;
         justify-content: center;
-        margin-bottom: 14px;
+        margin-bottom: 8px;
         min-height: 10px;
       }
       .dot {
         width: 6px;
         height: 6px;
         border-radius: 50%;
-        background: rgba(255, 255, 255, 0.1);
+        background: var(--dot-idle);
         transition:
           background 0.3s,
           transform 0.2s;
       }
       .dot.done {
-        background: var(--dot-color, rgba(255, 255, 255, 0.3));
+        background: var(--dot-color, var(--dot-done));
       }
       .dot.current {
-        background: var(--dot-color, #fff);
+        background: var(--dot-color, var(--text));
         transform: scale(1.5);
       }
 
       /* ── Main area ── */
       .main-row {
         display: flex;
-        gap: 16px;
+        gap: 14px;
         align-items: flex-start;
+        flex: 1;
+        min-height: 0;
+        width: 100%;
+        max-width: 1560px;
       }
 
       /* ── Diagram ── */
       .diagram {
         position: relative;
-        width: 1160px;
-        height: 720px;
-        flex-shrink: 0;
+        flex: 1;
+        min-width: 0;
+        height: 100%;
         border-radius: 18px;
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        background: rgba(255, 255, 255, 0.01);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        transition:
+          background 0.3s,
+          border-color 0.3s;
       }
       .diagram.flow-active {
         cursor: pointer;
+      }
+
+      .diagram-inner {
+        position: absolute;
+        width: 1160px;
+        height: 720px;
+        transform-origin: top left;
       }
 
       .diagram-svg {
@@ -162,57 +272,58 @@
       .node {
         position: absolute;
         transform: translate(-50%, -50%);
-        width: 155px;
-        height: 76px;
+        width: 160px;
+        height: 82px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 3px;
-        border: 1.5px solid rgba(255, 255, 255, 0.1);
+        border: 1.5px solid var(--border-subtle);
         border-radius: 12px;
-        background: rgba(255, 255, 255, 0.03);
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: rgba(255, 255, 255, 0.45);
+        background: var(--surface-alt);
+        color: var(--text-muted);
         transition: all 0.35s ease;
         z-index: 2;
         user-select: none;
       }
       .node img {
-        width: 28px;
-        height: 28px;
+        width: 30px;
+        height: 30px;
         object-fit: contain;
-        opacity: 0.45;
-        transition: opacity 0.35s ease;
-        filter: grayscale(30%);
+        opacity: var(--img-opacity);
+        transition:
+          opacity 0.35s ease,
+          filter 0.35s ease;
+        filter: var(--img-filter);
       }
       .node .node-label {
-        font-size: 0.8rem;
+        margin-top: 5px;
+        font-size: 0.95rem;
         white-space: nowrap;
       }
       .node .node-sublabel {
-        font-size: 0.68rem;
-        color: rgba(255, 255, 255, 0.3);
+        font-size: 0.75rem;
+        color: var(--text-dim);
       }
 
-      /* Browser nodes are a bit different — no AWS icon */
       .node.browser-node {
-        width: 145px;
-        height: 68px;
+        width: 150px;
+        height: 72px;
       }
       .node.browser-node .node-ico {
-        font-size: 1.35rem;
+        font-size: 1.6rem;
+        line-height: 25px;
       }
       .node.browser-node .node-role {
-        font-size: 0.68rem;
-        color: rgba(255, 255, 255, 0.3);
+        font-size: 0.75rem;
+        color: var(--text-dim);
       }
 
       .node.glow {
         border-color: var(--glow);
-        color: #fff;
-        background: color-mix(in srgb, var(--glow) 10%, rgba(15, 17, 21, 0.95));
+        color: var(--text);
+        background: color-mix(in srgb, var(--glow) 10%, var(--node-glow-bg));
         box-shadow:
           0 0 24px color-mix(in srgb, var(--glow) 30%, transparent),
           inset 0 0 12px color-mix(in srgb, var(--glow) 6%, transparent);
@@ -222,9 +333,31 @@
         filter: none;
       }
 
+      @keyframes nodePulse {
+        0% {
+          box-shadow:
+            0 0 24px color-mix(in srgb, var(--glow) 30%, transparent),
+            inset 0 0 12px color-mix(in srgb, var(--glow) 6%, transparent);
+        }
+        40% {
+          box-shadow:
+            0 0 56px color-mix(in srgb, var(--glow) 85%, transparent),
+            inset 0 0 24px color-mix(in srgb, var(--glow) 22%, transparent);
+          border-color: var(--glow);
+        }
+        100% {
+          box-shadow:
+            0 0 24px color-mix(in srgb, var(--glow) 30%, transparent),
+            inset 0 0 12px color-mix(in srgb, var(--glow) 6%, transparent);
+        }
+      }
+      .node.glow.pulse {
+        animation: nodePulse 0.65s ease-out;
+      }
+
       /* ── Edges ── */
       .edge {
-        stroke: rgba(255, 255, 255, 0.07);
+        stroke: var(--edge-idle);
         stroke-width: 1.5;
         fill: none;
         transition:
@@ -237,23 +370,61 @@
         stroke-width: 2.5;
         filter: drop-shadow(0 0 4px var(--glow));
       }
+      @keyframes edgePulse {
+        0% {
+          stroke-width: 2.5;
+          filter: drop-shadow(0 0 4px var(--glow));
+        }
+        40% {
+          stroke-width: 6;
+          filter: drop-shadow(0 0 12px var(--glow));
+        }
+        100% {
+          stroke-width: 2.5;
+          filter: drop-shadow(0 0 4px var(--glow));
+        }
+      }
+      .edge.glow.pulse {
+        animation: edgePulse 0.65s ease-out;
+      }
 
-      /* ── VPC boundary ── */
-      .vpc-rect {
-        fill: none;
-        stroke: rgba(255, 255, 255, 0.07);
+      /* ── Boundary rectangles ── */
+      .boundary-rect {
+        fill: var(--box-bg);
+        stroke: var(--border);
         stroke-width: 1;
         stroke-dasharray: 6 4;
       }
-      .vpc-label {
+      .boundary-label {
         position: absolute;
-        font-size: 0.7rem;
+        font-size: 0.8rem;
         font-weight: 700;
-        color: rgba(255, 255, 255, 0.15);
+        color: var(--text-dim);
         letter-spacing: 0.16em;
         text-transform: uppercase;
         font-family: "JetBrains Mono", monospace;
         z-index: 2;
+      }
+
+      /* ── Event label (shown below EventBridge during flows) ── */
+      .event-label {
+        position: absolute;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 6px;
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 10;
+        opacity: 0;
+        transition: opacity 0.25s;
+        background: color-mix(in srgb, var(--glow) 18%, var(--bg));
+        border: 1px solid color-mix(in srgb, var(--glow) 50%, transparent);
+        color: var(--glow);
+      }
+      .event-label.visible {
+        opacity: 1;
       }
 
       /* ── Hints ── */
@@ -263,7 +434,7 @@
         right: 14px;
         font-family: "JetBrains Mono", monospace;
         font-size: 0.72rem;
-        color: rgba(255, 255, 255, 0.18);
+        color: var(--text-faint);
         z-index: 10;
         pointer-events: none;
         text-align: right;
@@ -277,33 +448,35 @@
         right: 14px;
         font-family: "JetBrains Mono", monospace;
         font-size: 0.72rem;
-        color: rgba(255, 255, 255, 0.22);
+        color: var(--text-faint);
         z-index: 10;
         pointer-events: none;
       }
 
       /* ── Log panel ── */
       .log-panel {
-        width: 310px;
+        width: 340px;
         flex-shrink: 0;
-        background: rgba(255, 255, 255, 0.02);
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: var(--surface);
+        border: 1px solid var(--border);
         border-radius: 18px;
         padding: 14px;
-        height: 720px;
+        height: 100%;
         display: flex;
         flex-direction: column;
-        gap: 0;
+        transition:
+          background 0.3s,
+          border-color 0.3s;
       }
       .log-panel-header {
-        font-size: 0.72rem;
+        font-size: 0.8rem;
         font-weight: 700;
-        color: rgba(255, 255, 255, 0.25);
+        color: var(--text-dim);
         letter-spacing: 0.14em;
         text-transform: uppercase;
         font-family: "JetBrains Mono", monospace;
         padding-bottom: 10px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        border-bottom: 1px solid var(--border);
         margin-bottom: 10px;
         flex-shrink: 0;
       }
@@ -321,30 +494,27 @@
         background: transparent;
       }
       .log-entries::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.1);
+        background: var(--scrollbar);
         border-radius: 2px;
       }
       .log-entry {
         display: flex;
         align-items: flex-start;
         gap: 8px;
-        padding: 7px 8px;
+        padding: 9px 10px;
         border-radius: 8px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: var(--surface-alt);
+        border: 1px solid var(--border-faint);
         animation: fadeIn 0.25s ease;
       }
       .log-entry.current {
-        background: color-mix(
-          in srgb,
-          var(--glow) 8%,
-          rgba(255, 255, 255, 0.03)
-        );
+        background: color-mix(in srgb, var(--glow) 8%, var(--surface-alt));
         border-color: color-mix(in srgb, var(--glow) 25%, transparent);
       }
       .log-entry.past {
         opacity: 0.6;
       }
+
       @keyframes fadeIn {
         from {
           opacity: 0;
@@ -355,22 +525,23 @@
           transform: translateY(0);
         }
       }
+
       .log-dot {
         width: 7px;
         height: 7px;
         border-radius: 50%;
         flex-shrink: 0;
         margin-top: 4px;
-        background: var(--glow, rgba(255, 255, 255, 0.3));
+        background: var(--glow, var(--text-dim));
       }
       .log-text {
-        font-size: 0.84rem;
-        line-height: 1.4;
-        color: rgba(255, 255, 255, 0.75);
+        font-size: 0.97rem;
+        line-height: 1.45;
+        color: var(--text);
       }
       .log-empty {
         font-size: 0.78rem;
-        color: rgba(255, 255, 255, 0.2);
+        color: var(--text-dim);
         font-family: "JetBrains Mono", monospace;
         text-align: center;
         margin-top: 20px;
@@ -382,7 +553,7 @@
         display: flex;
         gap: 24px;
         font-size: 0.68rem;
-        color: rgba(255, 255, 255, 0.35);
+        color: var(--text-dim);
         font-family: "JetBrains Mono", monospace;
       }
       .legend-item {
@@ -404,7 +575,16 @@
         src="https://bbtg.com/assets/bbtg-logo-550x190-f846a0b3.png"
         alt="BBTG"
       />
-      <h1>Systeemarchitectuur</h1>
+      <h2>Systeemarchitectuur</h2>
+      <button
+        class="theme-toggle"
+        id="themeToggle"
+        title="Toggle light/dark mode"
+        onclick="toggleTheme()"
+      >
+        <span class="theme-toggle-icon moon">🌙</span>
+        <span class="theme-toggle-icon sun">☀️</span>
+      </button>
     </div>
 
     <div class="controls">
@@ -415,7 +595,7 @@
         Server-Sent Events
       </button>
       <button class="flow-btn websocket" onclick="startFlow('websocket')">
-        WebSocket
+        WebSockets
       </button>
     </div>
     <p class="flow-desc" id="flowDesc">&nbsp;</p>
@@ -423,7 +603,9 @@
 
     <div class="main-row">
       <div class="diagram" id="diagram">
-        <svg class="diagram-svg" id="svg"></svg>
+        <div class="diagram-inner" id="diagramInner">
+          <svg class="diagram-svg" id="svg"></svg>
+        </div>
         <div class="step-counter" id="stepCounter"></div>
         <div class="diagram-hints" id="diagHints" style="opacity: 0">
           Spatie / → &nbsp;volgende stap<br />
@@ -465,83 +647,104 @@
       // LAYOUT DATA
       // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-      const NW = 155,
-        NH = 76; // node width/height
+      const NW = 160,
+        NH = 82; // node width/height — must match .node CSS dimensions
 
       const nodes = [
+        // ── Browsers (top row) ──
         {
           id: "author",
           browser: true,
           ico: "✍️",
           label: "Author",
-          sublabel: "Journalist",
-          x: 180,
-          y: 60,
+          x: 120,
+          y: 55,
         },
         {
           id: "cloudfront",
           ico: ICONS.cloudfront,
           label: "CloudFront",
           x: 580,
-          y: 60,
+          y: 55,
         },
         {
           id: "visitor",
           browser: true,
           ico: "👁",
           label: "Visitor",
-          sublabel: "Reader",
-          x: 980,
-          y: 60,
+          x: 1000,
+          y: 55,
         },
-        { id: "s3", ico: ICONS.s3, label: "S3", x: 140, y: 240 },
-        { id: "apigw", ico: ICONS.apigw, label: "API Gateway", x: 400, y: 240 },
-        { id: "alb", ico: ICONS.alb, label: "ALB", x: 840, y: 240 },
+
+        // ── Network layer ──
+        { id: "s3", ico: ICONS.s3, label: "S3", x: 120, y: 210 },
         {
-          id: "lambda",
+          id: "apigw",
+          ico: ICONS.apigw,
+          label: "API Gateway",
+          x: 370,
+          y: 210,
+        },
+        { id: "alb", ico: ICONS.alb, label: "Load Balancer", x: 1000, y: 210 },
+
+        // ── Compute layer ──
+        {
+          id: "lambda-edit",
           ico: ICONS.lambda,
-          label: "Lambda",
-          sublabel: "Authoring",
-          x: 310,
-          y: 420,
+          label: "HTTP Lambda",
+          x: 120,
+          y: 380,
+        },
+        {
+          id: "lambda-deliv",
+          ico: ICONS.lambda,
+          label: "HTTP Lambda",
+          x: 805,
+          y: 380,
         },
         {
           id: "ecs",
           ico: ICONS.ecs,
-          label: "ECS Fargate",
-          sublabel: "SSE + WS",
-          x: 840,
-          y: 420,
+          label: "ECS",
+          x: 1000,
+          y: 380,
         },
+
+        // ── Data & integration layer ──
         {
-          id: "dynamodb",
+          id: "dynamo-edit",
           ico: ICONS.dynamodb,
-          label: "DynamoDB",
-          x: 140,
-          y: 610,
+          label: "Database",
+          x: 120,
+          y: 560,
         },
         {
           id: "eventbridge",
           ico: ICONS.eventbridge,
           label: "EventBridge",
-          x: 390,
-          y: 610,
+          x: 370,
+          y: 380,
         },
         {
           id: "consumer",
           ico: ICONS.lambda,
-          label: "Lambda",
-          sublabel: "Consumer",
+          label: "Consumer Lambda",
           x: 610,
-          y: 610,
+          y: 380,
         },
         {
           id: "redis",
           ico: ICONS.redis,
-          label: "ElastiCache",
-          sublabel: "Redis",
-          x: 840,
-          y: 610,
+          label: "Redis",
+          x: 1000,
+          y: 560,
+        },
+        {
+          id: "dynamo-deliv",
+          ico: ICONS.dynamodb,
+          label: "Database",
+          x: 805,
+          y: 560,
         },
       ];
 
@@ -561,6 +764,7 @@
       }
 
       const edges = [
+        // Browser ↔ CloudFront
         {
           id: "author-cf",
           from: pt("author", "right"),
@@ -571,52 +775,113 @@
           from: pt("visitor", "left"),
           to: pt("cloudfront", "right"),
         },
+
+        // CloudFront → backends
         {
           id: "cf-s3",
-          from: pt("cloudfront", "bottom", -60),
+          from: pt("cloudfront", "bottom", -30),
           to: pt("s3", "top", 10),
         },
         {
           id: "cf-apigw",
-          from: pt("cloudfront", "bottom", -20),
+          from: pt("cloudfront", "bottom", -10),
           to: pt("apigw", "top", 10),
         },
         {
           id: "cf-alb",
-          from: pt("cloudfront", "bottom", 50),
-          to: pt("alb", "top", -10),
+          from: pt("cloudfront", "bottom", 10),
+          to: pt("alb", "top"),
         },
+
+        // API Gateway → Editorial Lambda (writes)
         {
           id: "apigw-lambda",
           from: pt("apigw", "bottom", -5),
-          to: pt("lambda", "top", 10),
+          to: pt("lambda-edit", "top", 10),
         },
+
+        // API Gateway → Delivery Lambda (reads)
         {
-          id: "lambda-dynamo",
-          from: pt("lambda", "bottom", -20),
-          to: pt("dynamodb", "top", 15),
+          id: "apigw-lambda-deliv",
+          from: pt("apigw", "bottom", 20),
+          to: pt("lambda-deliv", "top", -10),
         },
+
+        // Editorial Lambda → Editorial DynamoDB
+        {
+          id: "lambda-dynamo-edit",
+          from: pt("lambda-edit", "bottom"),
+          to: pt("dynamo-edit", "top"),
+        },
+
+        // Editorial Lambda → EventBridge
         {
           id: "lambda-eb",
-          from: pt("lambda", "bottom", 20),
-          to: pt("eventbridge", "top", -10),
+          from: pt("lambda-edit", "right"),
+          to: pt("eventbridge", "left"),
         },
+
+        // EventBridge → Consumer Lambda
         {
           id: "eb-consumer",
           from: pt("eventbridge", "right"),
           to: pt("consumer", "left"),
         },
+
+        // Consumer → Redis (Streams for SSE, pub/sub for WS close)
         {
           id: "consumer-redis",
-          from: pt("consumer", "right"),
-          to: pt("redis", "left"),
+          from: pt("consumer", "bottom", -10),
+          to: pt("redis", "bottom"),
+          via: [
+            [600, 615],
+            [1000, 615],
+          ],
         },
-        { id: "redis-ecs", from: pt("redis", "top"), to: pt("ecs", "bottom") },
+
+        // Consumer → Delivery DynamoDB (materializes read model)
+        // Routed below Redis to avoid overlapping that node.
+        {
+          id: "consumer-dynamo-deliv",
+          from: pt("consumer", "bottom"),
+          to: pt("dynamo-deliv", "top", -10),
+        },
+
+        // Redis ↔ ECS (Streams for SSE, pub/sub for WS chat + close)
+        {
+          id: "redis-ecs",
+          from: pt("redis", "top"),
+          to: pt("ecs", "bottom"),
+        },
+
+        // ECS ↔ ALB
         { id: "ecs-alb", from: pt("ecs", "top"), to: pt("alb", "bottom") },
+
+        // ECS → Delivery DynamoDB (initial blog data, chat history)
+        {
+          id: "ecs-dynamo-deliv",
+          from: pt("ecs", "bottom", -10),
+          to: pt("dynamo-deliv", "top", 10),
+        },
+
+        // Delivery Lambda → Delivery DynamoDB
+        {
+          id: "lambda-deliv-dynamo-deliv",
+          from: pt("lambda-deliv", "bottom"),
+          to: pt("dynamo-deliv", "top"),
+        },
       ];
 
-      // VPC boundary around ALB, ECS, Consumer, Redis
-      const vpcBox = { x: 725, y: 196, w: 360, h: 460, r: 16 };
+      // ── Boundary boxes ──
+
+      // Editorial bounded context — around Editorial Lambda + Editorial DynamoDB
+      const editorialBox = { x: 18, y: 300, w: 200, h: 320, r: 14 };
+
+      // Shared Event Bus — around EventBridge (x:370, y:380, node 160×82)
+      const eventBusBox = { x: 270, y: 300, w: 200, h: 140, r: 14 };
+
+      // Delivery bounded context — around ALB, ECS, Consumer, Redis, Delivery DynamoDB
+      const deliveryBox = { x: 505, y: 155, w: 595, h: 480, r: 14 };
 
       // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       // FLOW COLORS & DESCRIPTIONS
@@ -628,17 +893,20 @@
         websocket: "#3498DB",
       };
 
-            const DESCS = {
-        polling: "Auteur publiceert — bezoeker leest bij de volgende poll (60s)",
-        sse: "Auteur publiceert — bezoeker ontvangt direct via SSE",
+      const DESCS = {
+        polling:
+          "Auteur publiceert → event → materialisatie in delivery DB → bezoeker pollt (60s)",
+        sse: "Auteur publiceert → event → Redis Stream → bezoeker ontvangt direct via SSE",
         websocket:
-          "Auteur stuurt bericht — auteur en bezoeker zien het direct via WebSocket",
+          "Chatberichten via WebSocket — blog sluiting via EventBridge",
       };
 
       // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       // FLOW STEPS
-      // Each step: { nodes, edges, label, clear }
+      // Each step: { nodes, edges, label, clear, pulse }
       // Nodes/edges accumulate. clear: true resets highlights before this step.
+      // pulse: string[] — briefly re-animates already-highlighted elements so
+      // there is a visible cue when nothing new is added to the diagram.
       // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
       const flows = {
@@ -659,20 +927,37 @@
             label: "POST /articles naar API Gateway",
           },
           {
-            nodes: ["lambda"],
+            nodes: ["lambda-edit"],
             edges: ["apigw-lambda"],
-            label: "Authoring Lambda wordt aangeroepen",
+            label: "Editorial Lambda wordt aangeroepen",
           },
           {
-            nodes: ["dynamodb"],
-            edges: ["lambda-dynamo"],
-            label: "Artikel opgeslagen in DynamoDB",
+            nodes: ["dynamo-edit"],
+            edges: ["lambda-dynamo-edit"],
+            label: "Artikel opgeslagen in Editorial DynamoDB",
+          },
+          {
+            nodes: ["eventbridge"],
+            edges: ["lambda-eb"],
+            label: "ArticlePublished event gepubliceerd naar EventBridge",
+            eventLabel: "ArticlePublished",
+          },
+          {
+            nodes: ["consumer"],
+            edges: ["eb-consumer"],
+            label: "Consumer Lambda getriggerd door event rule",
+            eventLabel: "ArticlePublished",
+          },
+          {
+            nodes: ["dynamo-deliv"],
+            edges: ["consumer-dynamo-deliv"],
+            label: "Artikel opgeslagen in Delivery DynamoDB",
           },
           {
             clear: true,
             nodes: ["visitor"],
             edges: [],
-            label: "60 seconden later — browser van de bezoeker pollt",
+            label: "10 seconden later — browser van de bezoeker pollt",
           },
           {
             nodes: ["cloudfront"],
@@ -685,14 +970,14 @@
             label: "Doorgestuurd naar API Gateway",
           },
           {
-            nodes: ["lambda"],
-            edges: ["apigw-lambda"],
-            label: "Lambda haalt artikelen op uit DynamoDB",
+            nodes: ["lambda-deliv"],
+            edges: ["apigw-lambda-deliv"],
+            label: "Delivery Lambda ontvangt het leesverzoek",
           },
           {
-            nodes: ["dynamodb"],
-            edges: ["lambda-dynamo"],
-            label: "Nieuw artikel zichtbaar voor bezoeker — na vertraging",
+            nodes: ["dynamo-deliv"],
+            edges: ["lambda-deliv-dynamo-deliv"],
+            label: "Lambda leest uit Delivery DynamoDB",
           },
         ],
         sse: [
@@ -709,12 +994,19 @@
           {
             nodes: ["alb"],
             edges: ["cf-alb"],
-            label: "ALB stuurt door naar ECS Fargate",
+            label: "ALB stuurt door naar ECS",
           },
           {
             nodes: ["ecs"],
             edges: ["ecs-alb"],
-            label: "Persistente SSE-stroom tot stand gebracht op ECS",
+            label:
+              "SSE-verbinding geopend — ECS haalt bestaande updates op uit de Redis Streams",
+          },
+          {
+            nodes: ["redis"],
+            edges: ["redis-ecs"],
+            label:
+              "Alle eerdere updates worden teruggespeeld — bezoeker ziet meteen de volledige geschiedenis",
           },
           {
             clear: true,
@@ -733,34 +1025,36 @@
             label: "POST /updates naar API Gateway",
           },
           {
-            nodes: ["lambda"],
+            nodes: ["lambda-edit"],
             edges: ["apigw-lambda"],
-            label: "Authoring Lambda wordt aangeroepen",
+            label: "Editorial Lambda wordt aangeroepen",
           },
           {
-            nodes: ["dynamodb"],
-            edges: ["lambda-dynamo"],
-            label: "Update opgeslagen in DynamoDB",
+            nodes: ["dynamo-edit"],
+            edges: ["lambda-dynamo-edit"],
+            label: "Update opgeslagen in Editorial DynamoDB",
           },
           {
             nodes: ["eventbridge"],
             edges: ["lambda-eb"],
             label: "UpdatePosted event gepubliceerd naar EventBridge",
+            eventLabel: "UpdatePosted",
           },
           {
             nodes: ["consumer"],
             edges: ["eb-consumer"],
             label: "Consumer Lambda getriggerd door event rule",
+            eventLabel: "UpdatePosted",
           },
           {
             nodes: ["redis"],
             edges: ["consumer-redis"],
-            label: "Gepubliceerd op Redis channel blog:<id>:updates",
+            label: "Update toegevoegd aan Redis Streams",
           },
           {
             nodes: ["ecs"],
             edges: ["redis-ecs"],
-            label: "ECS ontvangt update via Redis-abonnement",
+            label: "ECS ontvangt de update en stuurt hem direct door",
           },
           {
             nodes: ["alb"],
@@ -782,7 +1076,7 @@
           {
             nodes: ["author", "visitor"],
             edges: [],
-            label: "Auteur en bezoeker hebben beiden een WebSocket-verbinding open",
+            label: "Auteur en bezoeker verbinden — WebSocket-handshake via ALB",
           },
           {
             nodes: ["cloudfront"],
@@ -797,7 +1091,13 @@
           {
             nodes: ["ecs"],
             edges: ["ecs-alb"],
-            label: "ECS Fargate beheert de WebSocket-sessies",
+            label: "ECS beheert de WebSocket-sessies",
+          },
+          {
+            nodes: ["dynamo-deliv"],
+            edges: ["ecs-dynamo-deliv"],
+            label:
+              "ECS haalt chatgeschiedenis op uit DynamoDB — direct zichtbaar bij verbinden",
           },
           {
             clear: true,
@@ -810,36 +1110,105 @@
             edges: ["author-cf"],
             label: "Bericht via CloudFront",
           },
-          { nodes: ["alb"], edges: ["cf-alb"], label: "ALB stuurt door naar ECS" },
+          {
+            nodes: ["alb"],
+            edges: ["cf-alb"],
+            label: "ALB stuurt door naar ECS",
+          },
           {
             nodes: ["ecs"],
             edges: ["ecs-alb"],
             label: "ECS ontvangt bericht via WebSocket",
           },
           {
+            nodes: ["dynamo-deliv"],
+            edges: ["ecs-dynamo-deliv"],
+            label:
+              "Bericht opgeslagen in DynamoDB — history beschikbaar bij reconnect",
+          },
+          {
             nodes: ["redis"],
             edges: ["redis-ecs"],
-            label: "ECS publiceert naar Redis voor fan-out naar alle instanties",
+            label: "ECS publiceert naar Redis pub/sub voor fan-out",
           },
           {
             nodes: [],
             edges: ["redis-ecs"],
+            pulse: ["redis-ecs"],
             label: "Alle ECS-nodes ontvangen het bericht via Redis",
           },
           {
             nodes: ["alb"],
             edges: ["ecs-alb"],
-            label: "Elke ECS-node stuurt door naar verbonden clients",
+            pulse: ["ecs-alb", "alb"],
+            label: "Elke ECS-node stuurt het bericht door naar ALB",
           },
           {
             nodes: ["cloudfront"],
             edges: ["cf-alb"],
-            label: "Via CloudFront",
+            pulse: ["cf-alb", "cloudfront"],
+            label: "ALB stuurt door via CloudFront",
           },
           {
             nodes: ["author", "visitor"],
             edges: ["author-cf", "visitor-cf"],
+            pulse: ["author", "visitor", "author-cf", "visitor-cf"],
             label: "Auteur en bezoeker zien het bericht direct",
+          },
+          {
+            clear: true,
+            nodes: ["author"],
+            edges: [],
+            label: "⚡ Auteur sluit het blog — BlogClosed event",
+          },
+          {
+            nodes: ["cloudfront"],
+            edges: ["author-cf"],
+            label: "POST /blogs/:blogId/close via CloudFront",
+          },
+          {
+            nodes: ["apigw"],
+            edges: ["cf-apigw"],
+            label: "Naar API Gateway",
+          },
+          {
+            nodes: ["lambda-edit"],
+            edges: ["apigw-lambda"],
+            label: "Editorial Lambda publiceert BlogClosed event",
+          },
+          {
+            nodes: ["eventbridge"],
+            edges: ["lambda-eb"],
+            label: "BlogClosed event naar EventBridge",
+            eventLabel: "BlogClosed",
+          },
+          {
+            nodes: ["consumer"],
+            edges: ["eb-consumer"],
+            label: "Consumer Lambda getriggerd",
+            eventLabel: "BlogClosed",
+          },
+          {
+            nodes: ["redis"],
+            edges: ["consumer-redis"],
+            label: "Close-signaal gepubliceerd op Redis pub/sub",
+          },
+          {
+            nodes: ["ecs"],
+            edges: ["redis-ecs"],
+            label:
+              "ECS ontvangt close-signaal en sluit alle WebSocket-verbindingen",
+          },
+          {
+            nodes: ["alb"],
+            edges: ["ecs-alb"],
+            label:
+              "WebSocket close-frame via ALB doorgestuurd naar verbonden clients",
+          },
+          {
+            nodes: ["visitor"],
+            edges: ["cf-alb", "visitor-cf"],
+            label: "Bezoeker ontvangt graceful close — chat is beëindigd",
           },
         ],
       };
@@ -849,6 +1218,7 @@
       // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
       const diagram = document.getElementById("diagram");
+      const diagramInner = document.getElementById("diagramInner");
       const svg = document.getElementById("svg");
       const stepCounter = document.getElementById("stepCounter");
       const diagHints = document.getElementById("diagHints");
@@ -856,35 +1226,78 @@
       const progressDots = document.getElementById("progressDots");
       const logEntries = document.getElementById("logEntries");
 
+      // Scale the fixed 1160×720 inner canvas to fill the .diagram container.
+      function scaleDiagram() {
+        const scaleX = diagram.clientWidth / 1160;
+        const scaleY = diagram.clientHeight / 720;
+        const scale = Math.min(scaleX, scaleY);
+        const offsetX = (diagram.clientWidth - 1160 * scale) / 2;
+        const offsetY = (diagram.clientHeight - 720 * scale) / 2;
+        diagramInner.style.transform = `scale(${scale})`;
+        diagramInner.style.left = offsetX + "px";
+        diagramInner.style.top = offsetY + "px";
+      }
+      scaleDiagram();
+      window.addEventListener("resize", scaleDiagram);
+
+      function toggleTheme() {
+        document.body.classList.toggle("light");
+      }
+
       const NS = "http://www.w3.org/2000/svg";
 
-      // VPC boundary
-      const vpcEl = document.createElementNS(NS, "rect");
-      vpcEl.setAttribute("x", vpcBox.x);
-      vpcEl.setAttribute("y", vpcBox.y);
-      vpcEl.setAttribute("width", vpcBox.w);
-      vpcEl.setAttribute("height", vpcBox.h);
-      vpcEl.setAttribute("rx", vpcBox.r);
-      vpcEl.classList.add("vpc-rect");
-      svg.appendChild(vpcEl);
+      // Draw boundary boxes
+      const boundaries = [
+        { box: editorialBox, label: "Editorial", labelPos: "top-left" },
+        { box: eventBusBox, label: "Event Bus", labelPos: "top-left" },
+        { box: deliveryBox, label: "Delivery", labelPos: "top-left" },
+      ];
 
-      const vpcLabel = document.createElement("div");
-      vpcLabel.className = "vpc-label";
-      vpcLabel.textContent = "VPC";
-      vpcLabel.style.left = vpcBox.x + vpcBox.w - 38 + "px";
-      vpcLabel.style.top = vpcBox.y + 8 + "px";
-      diagram.appendChild(vpcLabel);
+      for (const b of boundaries) {
+        const rect = document.createElementNS(NS, "rect");
+        rect.setAttribute("x", b.box.x);
+        rect.setAttribute("y", b.box.y);
+        rect.setAttribute("width", b.box.w);
+        rect.setAttribute("height", b.box.h);
+        rect.setAttribute("rx", b.box.r);
+        rect.classList.add("boundary-rect");
+        svg.appendChild(rect);
 
-      // Edges
+        const lbl = document.createElement("div");
+        lbl.className = "boundary-label";
+        lbl.textContent = b.label;
+        if (b.labelPos === "top-right") {
+          lbl.style.left = b.box.x + b.box.w - b.label.length * 8 - 10 + "px";
+          lbl.style.top = b.box.y + 8 + "px";
+        } else {
+          lbl.style.left = b.box.x + 12 + "px";
+          lbl.style.top = b.box.y + 8 + "px";
+        }
+        diagramInner.appendChild(lbl);
+      }
+
+      // Edges — use polyline when via waypoints are present, line otherwise
       for (const e of edges) {
-        const line = document.createElementNS(NS, "line");
-        line.setAttribute("x1", e.from[0]);
-        line.setAttribute("y1", e.from[1]);
-        line.setAttribute("x2", e.to[0]);
-        line.setAttribute("y2", e.to[1]);
-        line.classList.add("edge");
-        line.id = "edge-" + e.id;
-        svg.appendChild(line);
+        if (e.via) {
+          const poly = document.createElementNS(NS, "polyline");
+          const allPoints = [e.from, ...e.via, e.to];
+          poly.setAttribute(
+            "points",
+            allPoints.map(([x, y]) => `${x},${y}`).join(" "),
+          );
+          poly.classList.add("edge");
+          poly.id = "edge-" + e.id;
+          svg.appendChild(poly);
+        } else {
+          const line = document.createElementNS(NS, "line");
+          line.setAttribute("x1", e.from[0]);
+          line.setAttribute("y1", e.from[1]);
+          line.setAttribute("x2", e.to[0]);
+          line.setAttribute("y2", e.to[1]);
+          line.classList.add("edge");
+          line.id = "edge-" + e.id;
+          svg.appendChild(line);
+        }
       }
 
       // Nodes
@@ -897,16 +1310,27 @@
         if (n.browser) {
           el.className = "node browser-node";
           el.innerHTML = `<span class="node-ico">${n.ico}</span>
-      <span class="node-label">${n.label}</span>
-      <span class="node-role">${n.sublabel || ""}</span>`;
+      <span class="node-label">${n.label}</span>`;
         } else {
           el.className = "node";
           el.innerHTML = `<img src="${n.ico}" alt="${n.label}">
-      <span class="node-label">${n.label}</span>
-      ${n.sublabel ? `<span class="node-sublabel">${n.sublabel}</span>` : ""}`;
+      <span class="node-label">${n.label}</span>`;
         }
-        diagram.appendChild(el);
+        diagramInner.appendChild(el);
       }
+
+      // Event label — floating pill shown below EventBridge during relevant steps
+      const eventLabelEl = document.createElement("div");
+      eventLabelEl.className = "event-label";
+      // Position centered below the EventBridge node
+      const ebNode = nodes.find((n) => n.id === "eventbridge");
+      // Center the label within the Event Bus boundary box, not the node itself
+      const eventLabelX = eventBusBox.x + eventBusBox.w / 2;
+      const eventLabelY = ebNode.y + NH;
+      eventLabelEl.style.top = eventLabelY + "px";
+      eventLabelEl.style.left = eventLabelX + "px";
+      eventLabelEl.style.transform = "translateX(-50%)";
+      diagramInner.appendChild(eventLabelEl);
 
       // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       // MANUAL STEP ENGINE
@@ -922,6 +1346,7 @@
         document
           .querySelectorAll(".edge.glow")
           .forEach((el) => el.classList.remove("glow"));
+        eventLabelEl.classList.remove("visible");
       }
 
       function clearAll() {
@@ -930,7 +1355,7 @@
         diagHints.style.opacity = "0";
         progressDots.innerHTML = "";
         logEntries.innerHTML =
-          '<p class="log-empty">Select a flow to begin</p>';
+          '<p class="log-empty">Selecteer een flow om te beginnen</p>';
       }
 
       function setColor(color) {
@@ -967,7 +1392,8 @@
       }
 
       // Apply a single step's highlights (does NOT clear — caller manages that)
-      function applyStepHighlights(name, index) {
+      // isPulseStep: only pulse on the live render, never during history replay.
+      function applyStepHighlights(name, index, isPulseStep = false) {
         const step = flows[name][index];
         if (!step) return;
         if (step.clear) clearHighlights();
@@ -979,13 +1405,26 @@
           const el = document.getElementById("edge-" + eid);
           if (el) el.classList.add("glow");
         }
+        if (!isPulseStep) return;
+        // Pulse elements that are already highlighted so there's a visible cue
+        // even when nothing new is added to the diagram.
+        for (const id of step.pulse || []) {
+          const el =
+            document.getElementById("node-" + id) ||
+            document.getElementById("edge-" + id);
+          if (!el) continue;
+          el.classList.remove("pulse");
+          void el.offsetWidth; // force reflow to restart the animation
+          el.classList.add("pulse");
+          setTimeout(() => el.classList.remove("pulse"), 700);
+        }
       }
 
       // Replay all highlights from step 0 up to targetIndex
       function replayHighlights(name, targetIndex) {
         clearHighlights();
         for (let i = 0; i <= targetIndex; i++) {
-          applyStepHighlights(name, i);
+          applyStepHighlights(name, i, false);
         }
       }
 
@@ -994,7 +1433,18 @@
         const color = COLORS[name];
 
         replayHighlights(name, index);
+        // Apply pulse for the current step only, after replay is done.
+        applyStepHighlights(name, index, true);
         rebuildLog(name, index, color);
+
+        // Show event label for the current step only
+        const currentStep = steps[index];
+        if (currentStep && currentStep.eventLabel) {
+          eventLabelEl.textContent = currentStep.eventLabel;
+          eventLabelEl.classList.add("visible");
+        } else {
+          eventLabelEl.classList.remove("visible");
+        }
 
         const isLast = index === steps.length - 1;
         stepCounter.textContent = `${index + 1} / ${steps.length}`;

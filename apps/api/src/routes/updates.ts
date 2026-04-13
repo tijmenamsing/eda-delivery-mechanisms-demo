@@ -25,8 +25,8 @@ export function createUpdatesRouter(publisher: EventPublisher): Router {
           type: BlogUpdate["type"];
         };
 
-        // Verify blog exists
-        const blog = await getItem<Blog>(env.BLOGS_TABLE, { blogId });
+        // Verify blog exists in editorial context
+        const blog = await getItem<Blog>(env.EDITORIAL_BLOGS_TABLE, { blogId });
         if (!blog) {
           res.status(404).json({
             error: { code: "NOT_FOUND", message: "Blog not found" },
@@ -44,7 +44,8 @@ export function createUpdatesRouter(publisher: EventPublisher): Router {
           postedAt: new Date().toISOString(),
         };
 
-        await putItem(env.UPDATES_TABLE, update);
+        // Write to editorial context (source of truth)
+        await putItem(env.EDITORIAL_UPDATES_TABLE, update);
 
         const event: UpdatePostedEvent = {
           type: "UpdatePosted",

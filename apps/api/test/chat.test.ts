@@ -6,7 +6,7 @@ import { errorHandler } from "../src/middleware/error.js";
 
 vi.mock("../src/lib/env.js", () => ({
   env: {
-    CHAT_MESSAGES_TABLE: "test-chat-messages",
+    DELIVERY_CHAT_MESSAGES_TABLE: "test-delivery-chat-messages",
     NODE_ENV: "test",
   },
 }));
@@ -71,7 +71,7 @@ describe("Chat routes", () => {
       expect(res.body.messages[0].author).toBe("Alice");
       expect(res.body.messages[1].author).toBe("Bob");
       expect(mockQueryItems).toHaveBeenCalledWith(
-        "test-chat-messages",
+        "test-delivery-chat-messages",
         "blogId = :blogId",
         { ":blogId": "b1" },
         "blogId-postedAt-index",

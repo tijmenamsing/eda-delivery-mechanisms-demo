@@ -17,7 +17,7 @@
     "infra:down": "docker-compose down",
     "db:init": "tsx --env-file=.env scripts/init-local.ts",
     "db:seed": "tsx --env-file=.env scripts/seed.ts",
-    "db:seed:prod": "AWS_PROFILE=personal ARTICLES_TABLE=dev-articles BLOGS_TABLE=dev-blogs UPDATES_TABLE=dev-updates CHAT_MESSAGES_TABLE=dev-chat-messages npx tsx scripts/seed.ts",
+    "db:seed:prod": "AWS_PROFILE=personal EDITORIAL_ARTICLES_TABLE=dev-editorial-articles EDITORIAL_BLOGS_TABLE=dev-editorial-blogs EDITORIAL_UPDATES_TABLE=dev-editorial-updates DELIVERY_ARTICLES_TABLE=dev-delivery-articles DELIVERY_BLOGS_TABLE=dev-delivery-blogs DELIVERY_UPDATES_TABLE=dev-delivery-updates DELIVERY_CHAT_MESSAGES_TABLE=dev-delivery-chat-messages npx tsx scripts/seed.ts",
     "setup": "pnpm infra:up && sleep 3 && pnpm db:init && pnpm db:seed"
   },
   "devDependencies": {

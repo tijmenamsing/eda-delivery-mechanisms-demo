@@ -5,16 +5,17 @@ import {
   ScanCommand,
   BatchWriteCommand,
 } from "@aws-sdk/lib-dynamodb";
+import Redis from "ioredis";
 import { randomUUID } from "node:crypto";
+import { REDIS_STREAMS } from "@bbtg-news/types/constants";
 
 const endpoint = process.env["DYNAMODB_ENDPOINT"];
 const region = process.env["AWS_REGION"] ?? "eu-west-1";
+const redisUrl = process.env["REDIS_URL"] ?? "redis://localhost:6379";
 
 const client = DynamoDBDocumentClient.from(
   new DynamoDBClient({
     region,
-    // Only override endpoint for LocalStack. Omit in production so the SDK
-    // resolves the real AWS endpoint and uses the default credential chain.
     ...(endpoint
       ? {
           endpoint,
@@ -28,11 +29,23 @@ const client = DynamoDBDocumentClient.from(
   { marshallOptions: { removeUndefinedValues: true } },
 );
 
-const articlesTable = process.env["ARTICLES_TABLE"] ?? "dev-articles";
-const blogsTable = process.env["BLOGS_TABLE"] ?? "dev-blogs";
-const updatesTable = process.env["UPDATES_TABLE"] ?? "dev-updates";
-const chatMessagesTable =
-  process.env["CHAT_MESSAGES_TABLE"] ?? "dev-chat-messages";
+// Editorial context tables
+const editorialArticlesTable =
+  process.env["EDITORIAL_ARTICLES_TABLE"] ?? "dev-editorial-articles";
+const editorialBlogsTable =
+  process.env["EDITORIAL_BLOGS_TABLE"] ?? "dev-editorial-blogs";
+const editorialUpdatesTable =
+  process.env["EDITORIAL_UPDATES_TABLE"] ?? "dev-editorial-updates";
+
+// Delivery context tables
+const deliveryArticlesTable =
+  process.env["DELIVERY_ARTICLES_TABLE"] ?? "dev-delivery-articles";
+const deliveryBlogsTable =
+  process.env["DELIVERY_BLOGS_TABLE"] ?? "dev-delivery-blogs";
+const deliveryUpdatesTable =
+  process.env["DELIVERY_UPDATES_TABLE"] ?? "dev-delivery-updates";
+const deliveryChatMessagesTable =
+  process.env["DELIVERY_CHAT_MESSAGES_TABLE"] ?? "dev-delivery-chat-messages";
 
 const blogId = "b1e5a3f0-1234-4abc-9def-000000000001";
 
@@ -59,7 +72,6 @@ async function pruneTable(
     const items = result.Items ?? [];
     lastKey = result.LastEvaluatedKey as Record<string, unknown> | undefined;
 
-    // BatchWrite accepts at most 25 requests per call
     for (let i = 0; i < items.length; i += 25) {
       const batch = items.slice(i, i + 25);
       await client.send(
@@ -82,27 +94,62 @@ async function pruneTable(
   return deleted;
 }
 
+/** Put an item into both editorial and delivery tables. */
+async function putBoth(
+  editorialTable: string,
+  deliveryTable: string,
+  item: Record<string, unknown>,
+): Promise<void> {
+  await Promise.all([
+    client.send(new PutCommand({ TableName: editorialTable, Item: item })),
+    client.send(new PutCommand({ TableName: deliveryTable, Item: item })),
+  ]);
+}
+
 async function seed(): Promise<void> {
   const isProd = !process.env["DYNAMODB_ENDPOINT"];
+  const skipRedis = process.env["SKIP_REDIS"] === "true";
 
   if (isProd) {
     console.log("\n⚠️  PRODUCTION SEED — writing to real AWS DynamoDB\n");
   }
   console.log("\n🌱 Seeding demo data...\n");
 
-  // Prune existing data so re-seeds are idempotent
-  console.log("🗑️  Pruning existing data...");
-  const [a, b, u, c] = await Promise.all([
-    pruneTable(articlesTable, "articleId"),
-    pruneTable(blogsTable, "blogId"),
-    pruneTable(updatesTable, "updateId"),
-    pruneTable(chatMessagesTable, "messageId"),
-  ]);
-  console.log(
-    `  Deleted ${a} articles, ${b} blogs, ${u} updates, ${c} chat messages\n`,
-  );
+  // Redis is optional — not reachable from a developer laptop when ElastiCache
+  // is inside a VPC. Pass SKIP_REDIS=true to skip Stream writes (DynamoDB
+  // data is still seeded; SSE history starts empty until updates are posted).
+  const redis = skipRedis
+    ? null
+    : new Redis(redisUrl, { maxRetriesPerRequest: 3 });
 
-  // Seed articles — BBTG press releases
+  // Prune existing data in all tables
+  console.log("🗑️  Pruning existing data...");
+  const pruneResults = await Promise.all([
+    pruneTable(editorialArticlesTable, "articleId"),
+    pruneTable(editorialBlogsTable, "blogId"),
+    pruneTable(editorialUpdatesTable, "updateId"),
+    pruneTable(deliveryArticlesTable, "articleId"),
+    pruneTable(deliveryBlogsTable, "blogId"),
+    pruneTable(deliveryUpdatesTable, "updateId"),
+    pruneTable(deliveryChatMessagesTable, "messageId"),
+  ]);
+  const total = pruneResults.reduce((sum, n) => sum + n, 0);
+  console.log(`  Deleted ${total} items across all tables\n`);
+
+  // Also clear Redis Streams (skipped when Redis is not reachable)
+  const streamKey = REDIS_STREAMS.blogUpdates(blogId);
+  if (redis) {
+    try {
+      await redis.del(streamKey);
+      console.log(`  Cleared Redis Stream: ${streamKey}\n`);
+    } catch {
+      // Stream may not exist yet
+    }
+  } else {
+    console.log(`  Skipping Redis Stream clear (SKIP_REDIS=true)\n`);
+  }
+
+  // Seed articles — BBTG press releases (into both editorial and delivery)
   const articles = [
     {
       articleId: "a0000001-0001-4000-8000-000000000001",
@@ -177,13 +224,11 @@ async function seed(): Promise<void> {
   ];
 
   for (const article of articles) {
-    await client.send(
-      new PutCommand({ TableName: articlesTable, Item: article }),
-    );
+    await putBoth(editorialArticlesTable, deliveryArticlesTable, article);
     console.log(`  📰 Article: ${article.title}`);
   }
 
-  // Seed a live blog — BBTG Kennisfestival 2026
+  // Seed a live blog — BBTG Kennisfestival 2026 (into both editorial and delivery)
   const blog = {
     blogId,
     title: "Live: Navara Kennisfestival 2026",
@@ -194,10 +239,10 @@ async function seed(): Promise<void> {
     createdAt: "2026-04-15T11:00:00.000Z",
   };
 
-  await client.send(new PutCommand({ TableName: blogsTable, Item: blog }));
+  await putBoth(editorialBlogsTable, deliveryBlogsTable, blog);
   console.log(`  🎪 Blog: ${blog.title}`);
 
-  // Seed Kennisfestival live updates (pre-seeded up to 17:00)
+  // Seed Kennisfestival live updates (into both editorial and delivery + Redis Stream)
   const updates = [
     {
       updateId: randomUUID(),
@@ -302,14 +347,26 @@ async function seed(): Promise<void> {
   ];
 
   for (const update of updates) {
-    await client.send(
-      new PutCommand({ TableName: updatesTable, Item: update }),
-    );
+    await putBoth(editorialUpdatesTable, deliveryUpdatesTable, update);
+
+    // Also XADD to Redis Stream so SSE replay works with seeded data
+    if (redis) {
+      const payload = JSON.stringify({
+        updateId: update.updateId,
+        blogId: update.blogId,
+        content: update.content,
+        author: update.author,
+        minute: update.minute,
+        type: update.type,
+        postedAt: update.postedAt,
+      });
+      await redis.xadd(streamKey, "*", "payload", payload);
+    }
+
     console.log(`  💬 Update: ${update.content.substring(0, 50)}...`);
   }
 
-  // Seed chat messages with timestamps relative to now so they always appear
-  // before any live demo messages regardless of when the seed is run.
+  // Seed chat messages (delivery context only — user-generated)
   const now = Date.now();
   const chatMessages = [
     {
@@ -318,7 +375,7 @@ async function seed(): Promise<void> {
       author: "Lisa",
       content:
         "Spannend! Ben benieuwd naar de TechTalks over cloud soevereiniteit 🇪🇺",
-      postedAt: new Date(now - 15 * 60 * 1000).toISOString(), // 15 min ago
+      postedAt: new Date(now - 15 * 60 * 1000).toISOString(),
     },
     {
       messageId: randomUUID(),
@@ -326,25 +383,29 @@ async function seed(): Promise<void> {
       author: "Martijn",
       content:
         "Zit in de break room over event-driven architectuur. Echt goed verhaal!",
-      postedAt: new Date(now - 10 * 60 * 1000).toISOString(), // 10 min ago
+      postedAt: new Date(now - 10 * 60 * 1000).toISOString(),
     },
     {
       messageId: randomUUID(),
       blogId,
       author: "Sophie",
       content: "Wie gaat er straks naar de sessie over Server-Sent Events?",
-      postedAt: new Date(now - 5 * 60 * 1000).toISOString(),  // 5 min ago
+      postedAt: new Date(now - 5 * 60 * 1000).toISOString(),
     },
   ];
 
   for (const msg of chatMessages) {
     await client.send(
-      new PutCommand({ TableName: chatMessagesTable, Item: msg }),
+      new PutCommand({ TableName: deliveryChatMessagesTable, Item: msg }),
     );
     console.log(`  💬 Chat: ${msg.author}: ${msg.content.substring(0, 40)}...`);
   }
 
   console.log("\n✅ Seed data inserted\n");
+
+  if (redis) {
+    await redis.quit();
+  }
 }
 
 seed().catch((err) => {

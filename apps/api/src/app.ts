@@ -38,7 +38,7 @@ app.use(requestId);
 app.use("/health", createHealthRouter());
 app.use("/articles", createArticlesRouter(publisher));
 app.use("/updates", createUpdatesRouter(publisher));
-app.use("/blogs", createBlogsRouter());
+app.use("/blogs", createBlogsRouter(publisher));
 app.use("/stream", createStreamRouter());
 app.use("/chat", createChatRouter());
 

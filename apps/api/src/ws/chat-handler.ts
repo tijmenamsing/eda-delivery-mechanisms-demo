@@ -13,7 +13,6 @@ import type { Blog } from "@bbtg-news/types/models";
 const HISTORY_LIMIT = 50;
 const RATE_LIMIT_MS = 1000;
 const PING_INTERVAL_MS = 30_000;
-const PONG_TIMEOUT_MS = 10_000;
 
 export async function handleChatConnection(
   ws: WebSocket,
@@ -22,11 +21,18 @@ export async function handleChatConnection(
 ): Promise<void> {
   const log = logger.child({ blogId, connectionId: randomUUID().slice(0, 8) });
 
-  // Verify the blog exists
-  const blog = await getItem<Blog>(env.BLOGS_TABLE, { blogId });
+  // Verify the blog exists in delivery context
+  const blog = await getItem<Blog>(env.DELIVERY_BLOGS_TABLE, { blogId });
   if (!blog) {
     log.warn("Blog not found, closing connection");
     ws.close(WS_CLOSE_CODES.BLOG_NOT_FOUND, "Blog not found");
+    return;
+  }
+
+  // If blog is already closed, reject the connection
+  if (blog.status === "closed") {
+    log.info("Blog is closed, rejecting connection");
+    ws.close(WS_CLOSE_CODES.BLOG_CLOSED, "Blog is gesloten");
     return;
   }
 
@@ -34,7 +40,7 @@ export async function handleChatConnection(
 
   // Send chat history
   const messages = await queryItems<ChatMessage>(
-    env.CHAT_MESSAGES_TABLE,
+    env.DELIVERY_CHAT_MESSAGES_TABLE,
     "blogId = :blogId",
     { ":blogId": blogId },
     "blogId-postedAt-index",
@@ -45,21 +51,32 @@ export async function handleChatConnection(
     JSON.stringify({ event: WS_EVENTS.HISTORY, data: recent }),
   );
 
-  // Subscribe to Redis channel for this blog's chat
+  // Subscribe to Redis channels: chat messages + blog closed signal
   const subscriber = createSubscriberClient();
-  const channel = REDIS_CHANNELS.chatMessages(blogId);
+  const chatChannel = REDIS_CHANNELS.chatMessages(blogId);
+  const closedChannel = REDIS_CHANNELS.blogClosed(blogId);
 
-  await subscriber.subscribe(channel).catch((err: unknown) => {
-    log.error({ err, channel }, "Failed to subscribe to chat channel");
+  await subscriber.subscribe(chatChannel, closedChannel).catch((err: unknown) => {
+    log.error({ err }, "Failed to subscribe to chat/closed channels");
     ws.close(WS_CLOSE_CODES.SERVER_ERROR, "Subscription failed");
   });
 
   // Forward Redis messages to this WebSocket client
   subscriber.on("message", (ch: string, message: string) => {
-    if (ch === channel && ws.readyState === ws.OPEN) {
+    if (ws.readyState !== ws.OPEN) return;
+
+    if (ch === chatChannel) {
       ws.send(
         JSON.stringify({ event: WS_EVENTS.MESSAGE, data: JSON.parse(message) }),
       );
+    } else if (ch === closedChannel) {
+      // Broadcast a system message so clients see "blog gesloten" in the feed
+      // before we tear down the WebSocket connection.
+      log.info("Received BlogClosed signal, closing WebSocket");
+      ws.send(
+        JSON.stringify({ event: WS_EVENTS.CLOSED, data: { message: "Blog is gesloten — geen nieuwe berichten meer mogelijk" } }),
+      );
+      ws.close(WS_CLOSE_CODES.BLOG_CLOSED, "Blog is gesloten");
     }
   });
 
@@ -105,13 +122,13 @@ export async function handleChatConnection(
       };
 
       // Store in DynamoDB with 24h TTL
-      await putItem(env.CHAT_MESSAGES_TABLE, {
+      await putItem(env.DELIVERY_CHAT_MESSAGES_TABLE, {
         ...chatMessage,
         ttl: Math.floor(Date.now() / 1000) + 86400,
       });
 
       // Broadcast via Redis (all ECS nodes including this one will receive it)
-      await getRedisClient().publish(channel, JSON.stringify(chatMessage));
+      await getRedisClient().publish(chatChannel, JSON.stringify(chatMessage));
 
       log.debug(
         { messageId: chatMessage.messageId },
@@ -149,7 +166,7 @@ export async function handleChatConnection(
   ws.on("close", () => {
     clearInterval(pingInterval);
     try {
-      const result = subscriber.unsubscribe(channel);
+      const result = subscriber.unsubscribe(chatChannel, closedChannel);
       if (result && typeof result === "object" && "catch" in result) {
         (result as Promise<unknown>).catch(() => {});
       }

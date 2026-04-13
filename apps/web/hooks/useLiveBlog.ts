@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import type { UpdatePostedEvent } from "@bbtg-news/types/events";
 import type { BlogUpdate } from "@bbtg-news/types/models";
 import { SSE_EVENTS } from "@bbtg-news/types/constants";
 import { getSSEUrl } from "@/lib/api";
@@ -28,17 +27,12 @@ export function useLiveBlog({
 
   const handleUpdate = useCallback((event: MessageEvent) => {
     try {
-      const data = JSON.parse(event.data as string) as UpdatePostedEvent;
-      const newUpdate: BlogUpdate = {
-        updateId: data.updateId,
-        blogId: data.blogId,
-        content: data.content,
-        author: data.author,
-        minute: data.minute,
-        type: data.updateType,
-        postedAt: data.postedAt,
-      };
-      setUpdates((prev) => [...prev, newUpdate]);
+      const newUpdate = JSON.parse(event.data as string) as BlogUpdate;
+      setUpdates((prev) =>
+        prev.some((u) => u.updateId === newUpdate.updateId)
+          ? prev
+          : [...prev, newUpdate],
+      );
     } catch {
       console.error("Failed to parse SSE update");
     }

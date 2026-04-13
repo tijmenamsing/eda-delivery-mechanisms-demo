@@ -1,8 +1,9 @@
-import type { Article, Blog, BlogUpdate } from "@bbtg-news/types/models";
+import type { Article, Blog, BlogUpdate, ChatMessage } from "@bbtg-news/types/models";
 import type {
   GetArticlesResponse,
   GetBlogsResponse,
   GetBlogDetailResponse,
+  GetChatMessagesResponse,
   PostArticleRequest,
   PostArticleResponse,
   PostUpdateRequest,
@@ -79,6 +80,27 @@ export async function postUpdate(
     );
   }
   return (await res.json()) as PostUpdateResponse;
+}
+
+export async function closeBlog(blogId: string): Promise<{ blog: Blog }> {
+  const res = await fetch(`${API_URL}/blogs/${blogId}/close`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: { message: "Unknown error" } }));
+    throw new Error(
+      (err as { error?: { message?: string } }).error?.message ?? `Request failed: ${res.status}`,
+    );
+  }
+  return (await res.json()) as { blog: Blog };
+}
+
+export async function fetchChatMessages(blogId: string): Promise<ChatMessage[]> {
+  const res = await fetch(`${API_URL}/chat/${blogId}/messages`);
+  if (!res.ok) return [];
+  const data = (await res.json()) as GetChatMessagesResponse;
+  return data.messages;
 }
 
 export function getSSEUrl(blogId: string): string {

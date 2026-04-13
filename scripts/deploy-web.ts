@@ -63,9 +63,13 @@ async function getDistributionId(domainName: string): Promise<string> {
   const { DistributionList } = await cfrontClient.send(
     new ListDistributionsCommand({}),
   );
-  const dist = DistributionList?.Items?.find((d) => d.DomainName === domainName);
+  const dist = DistributionList?.Items?.find(
+    (d) => d.DomainName === domainName,
+  );
   if (!dist?.Id)
-    throw new Error(`No CloudFront distribution found for domain: ${domainName}`);
+    throw new Error(
+      `No CloudFront distribution found for domain: ${domainName}`,
+    );
   return dist.Id;
 }
 
@@ -78,7 +82,10 @@ async function waitForInvalidation(
   for (;;) {
     await new Promise((r) => setTimeout(r, 5000));
     const { Invalidation } = await cfrontClient.send(
-      new GetInvalidationCommand({ DistributionId: distributionId, Id: invalidationId }),
+      new GetInvalidationCommand({
+        DistributionId: distributionId,
+        Id: invalidationId,
+      }),
     );
     if (Invalidation?.Status === "Completed") return;
     process.stdout.write(".");
@@ -160,10 +167,17 @@ async function main(): Promise<void> {
   // tables before re-inserting, so re-deploying is always safe.
   console.log("🌱 Seeding DynamoDB with demo data...");
   exec("npx tsx scripts/seed.ts", {
-    ARTICLES_TABLE: `${environment}-articles`,
-    BLOGS_TABLE: `${environment}-blogs`,
-    UPDATES_TABLE: `${environment}-updates`,
-    CHAT_MESSAGES_TABLE: `${environment}-chat-messages`,
+    EDITORIAL_ARTICLES_TABLE: `${environment}-editorial-articles`,
+    EDITORIAL_BLOGS_TABLE: `${environment}-editorial-blogs`,
+    EDITORIAL_UPDATES_TABLE: `${environment}-editorial-updates`,
+    DELIVERY_ARTICLES_TABLE: `${environment}-delivery-articles`,
+    DELIVERY_BLOGS_TABLE: `${environment}-delivery-blogs`,
+    DELIVERY_UPDATES_TABLE: `${environment}-delivery-updates`,
+    DELIVERY_CHAT_MESSAGES_TABLE: `${environment}-delivery-chat-messages`,
+    // ElastiCache is inside the VPC — not reachable from a developer laptop.
+    // DynamoDB tables are seeded; Redis Streams will be populated when the
+    // first live updates are posted via the API.
+    SKIP_REDIS: "true",
     // Omit DYNAMODB_ENDPOINT so the AWS SDK uses the real endpoint.
   });
   console.log("  Seed complete ✓\n");

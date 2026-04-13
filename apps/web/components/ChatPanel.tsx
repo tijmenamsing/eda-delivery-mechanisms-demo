@@ -6,6 +6,7 @@ import { useChat } from "@/hooks/useChat";
 
 interface ChatPanelProps {
   blogId: string;
+  initialClosed?: boolean;
 }
 
 const PANEL_WIDTH = 350;
@@ -19,16 +20,17 @@ function generateNickname(): string {
   return `Bezoeker-${suffix}`;
 }
 
-export function ChatPanel({ blogId }: ChatPanelProps): ReactNode {
+export function ChatPanel({ blogId, initialClosed = false }: ChatPanelProps): ReactNode {
   const [isOpen, setIsOpen] = useState(false);
   const defaultNickname = useMemo(() => generateNickname(), []);
   const [nickname, setNickname] = useState(defaultNickname);
   const [draft, setDraft] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { messages, isConnected, error, sendMessage } = useChat({
+  const { messages, isConnected, isBlogClosed, error, sendMessage } = useChat({
     blogId,
     enabled: isOpen,
+    initialClosed,
   });
 
   useEffect(() => {
@@ -51,10 +53,12 @@ export function ChatPanel({ blogId }: ChatPanelProps): ReactNode {
         style={{
           marginBottom: "1rem",
           padding: "0.6rem 1rem",
-          background: isOpen ? "#FF6B00" : "rgba(255, 255, 255, 0.08)",
-          border: `1px solid ${isOpen ? "#FF6B00" : "rgba(255, 255, 255, 0.15)"}`,
+          background: isOpen
+            ? (isBlogClosed ? "rgba(255, 255, 255, 0.06)" : "#FF6B00")
+            : "rgba(255, 255, 255, 0.08)",
+          border: `1px solid ${isOpen && !isBlogClosed ? "#FF6B00" : "rgba(255, 255, 255, 0.15)"}`,
           borderRadius: 10,
-          color: "#fff",
+          color: isBlogClosed ? "rgba(255,255,255,0.5)" : "#fff",
           cursor: "pointer",
           fontSize: "0.85rem",
           display: "inline-flex",
@@ -63,7 +67,7 @@ export function ChatPanel({ blogId }: ChatPanelProps): ReactNode {
           transition: "background 0.2s, border-color 0.2s",
         }}
       >
-        💬 {isOpen ? "Chat sluiten" : "Chat openen"}
+        💬 {isOpen ? "Chat sluiten" : isBlogClosed ? "Berichten bekijken" : "Chat openen"}
       </button>
 
       {/* Backdrop overlay */}
@@ -119,8 +123,8 @@ export function ChatPanel({ blogId }: ChatPanelProps): ReactNode {
                 display: "inline-block",
               }}
             />
-            <span style={{ fontSize: "0.8rem", color: isConnected ? "#2ECC71" : "#FF6B00" }}>
-              {isConnected ? "WebSocket verbonden" : "Verbinden..."}
+            <span style={{ fontSize: "0.8rem", color: isBlogClosed ? "#e74c3c" : isConnected ? "#2ECC71" : "#FF6B00" }}>
+              {isBlogClosed ? "Blog gesloten" : isConnected ? "WebSocket verbonden" : "Verbinden..."}
             </span>
             {error && (
               <span style={{ fontSize: "0.7rem", color: "#FF6B00", marginLeft: "0.25rem" }}>
@@ -207,7 +211,22 @@ export function ChatPanel({ blogId }: ChatPanelProps): ReactNode {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input area */}
+        {/* Input area — hidden when blog is closed */}
+        {isBlogClosed ? (
+          <div
+            style={{
+              padding: "0.75rem 1rem",
+              borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+              background: "rgba(0, 0, 0, 0.15)",
+              flexShrink: 0,
+              textAlign: "center",
+              fontSize: "0.8rem",
+              color: "rgba(255, 255, 255, 0.45)",
+            }}
+          >
+            ⏹ Blog gesloten — alleen lezen
+          </div>
+        ) : (
         <form
           onSubmit={handleSubmit}
           style={{
@@ -241,7 +260,7 @@ export function ChatPanel({ blogId }: ChatPanelProps): ReactNode {
               onChange={(e) => setDraft(e.target.value)}
               placeholder="Typ een bericht..."
               maxLength={500}
-              disabled={!isConnected}
+              disabled={!isConnected || isBlogClosed}
               style={{
                 flex: 1,
                 padding: "0.4rem 0.6rem",
@@ -254,7 +273,7 @@ export function ChatPanel({ blogId }: ChatPanelProps): ReactNode {
             />
             <button
               type="submit"
-              disabled={!isConnected || !draft.trim() || !nickname.trim()}
+              disabled={!isConnected || isBlogClosed || !draft.trim() || !nickname.trim()}
               style={{
                 padding: "0.4rem 0.75rem",
                 background:
@@ -274,6 +293,7 @@ export function ChatPanel({ blogId }: ChatPanelProps): ReactNode {
             </button>
           </div>
         </form>
+        )}
       </div>
     </>
   );
