@@ -12,17 +12,16 @@ import type { Construct } from "constructs";
 export interface SseServiceProps {
   readonly vpc: ec2.IVpc;
   readonly redisUrl: string;
-  readonly articlesTable: dynamodb.ITable;
-  readonly blogsTable: dynamodb.ITable;
-  readonly updatesTable: dynamodb.ITable;
-  readonly chatMessagesTable: dynamodb.ITable;
+  readonly deliveryBlogsTable: dynamodb.ITable;
+  readonly deliveryUpdatesTable: dynamodb.ITable;
+  readonly deliveryChatMessagesTable: dynamodb.ITable;
   readonly eventBus: events.IEventBus;
   readonly environment: string;
 }
 
 /**
- * ECS Fargate service behind an ALB, serving long-lived SSE connections.
- * The ALB idle timeout is set to 300 s to keep SSE streams alive.
+ * ECS Fargate service behind an ALB, serving long-lived SSE + WebSocket connections.
+ * Only needs delivery context tables (read-only for GET endpoints and chat).
  */
 export class SseService extends cdk.Resource {
   public readonly loadBalancerDnsName: string;
@@ -36,7 +35,6 @@ export class SseService extends cdk.Resource {
       clusterName: `bbtg-news-${props.environment}-sse`,
     });
 
-    // Security group for the Fargate tasks
     const taskSg = new ec2.SecurityGroup(this, "TaskSg", {
       vpc: props.vpc,
       description: "Security group for ECS SSE tasks",
@@ -44,7 +42,6 @@ export class SseService extends cdk.Resource {
     });
     this.securityGroup = taskSg;
 
-    // Task definition
     const taskDef = new ecs.FargateTaskDefinition(this, "TaskDef", {
       memoryLimitMiB: 512,
       cpu: 256,
@@ -56,7 +53,6 @@ export class SseService extends cdk.Resource {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
-    // Build the Docker image from the repo root using the API Dockerfile
     const container = taskDef.addContainer("api", {
       image: ecs.ContainerImage.fromAsset(
         path.join(__dirname, "../../.."),
@@ -70,10 +66,17 @@ export class SseService extends cdk.Resource {
         NODE_ENV: "production",
         PORT: "3001",
         REDIS_URL: props.redisUrl,
-        ARTICLES_TABLE: props.articlesTable.tableName,
-        BLOGS_TABLE: props.blogsTable.tableName,
-        UPDATES_TABLE: props.updatesTable.tableName,
-        CHAT_MESSAGES_TABLE: props.chatMessagesTable.tableName,
+        // ECS serves delivery reads + SSE/WS — no editorial tables needed
+        DELIVERY_BLOGS_TABLE: props.deliveryBlogsTable.tableName,
+        DELIVERY_UPDATES_TABLE: props.deliveryUpdatesTable.tableName,
+        DELIVERY_CHAT_MESSAGES_TABLE: props.deliveryChatMessagesTable.tableName,
+        // ECS doesn't do editorial writes, but the Express app validates all
+        // env vars at startup. Set these to the delivery tables since ECS
+        // only handles GET/SSE/WS traffic via ALB routing.
+        EDITORIAL_ARTICLES_TABLE: "unused-ecs-editorial-articles",
+        EDITORIAL_BLOGS_TABLE: "unused-ecs-editorial-blogs",
+        EDITORIAL_UPDATES_TABLE: "unused-ecs-editorial-updates",
+        DELIVERY_ARTICLES_TABLE: "unused-ecs-delivery-articles",
         EVENT_PUBLISHER: "eventbridge",
         EVENTBRIDGE_BUS_NAME: props.eventBus.eventBusName,
         ALLOWED_ORIGIN: "*",
@@ -82,22 +85,17 @@ export class SseService extends cdk.Resource {
       portMappings: [{ containerPort: 3001 }],
     });
 
-    // Grant DynamoDB access via the task role
-    props.articlesTable.grantReadWriteData(taskDef.taskRole);
-    props.blogsTable.grantReadWriteData(taskDef.taskRole);
-    props.updatesTable.grantReadWriteData(taskDef.taskRole);
-    props.chatMessagesTable.grantReadWriteData(taskDef.taskRole);
+    // Grant delivery tables read/write (chat writes to delivery-chat-messages)
+    props.deliveryBlogsTable.grantReadData(taskDef.taskRole);
+    props.deliveryUpdatesTable.grantReadData(taskDef.taskRole);
+    props.deliveryChatMessagesTable.grantReadWriteData(taskDef.taskRole);
 
     // Grant EventBridge put access
     props.eventBus.grantPutEventsTo(taskDef.taskRole);
 
-    // ALB — public facing, HTTP only (add ACM cert + HTTPS in production)
     const alb = new elb.ApplicationLoadBalancer(this, "Alb", {
       vpc: props.vpc,
       internetFacing: true,
-      // 300 s idle timeout so SSE streams aren't dropped prematurely.
-      // The Express keepalive interval (30 s) keeps the connection active
-      // below this threshold.
       idleTimeout: cdk.Duration.seconds(300),
     });
 
@@ -106,7 +104,6 @@ export class SseService extends cdk.Resource {
       protocol: elb.ApplicationProtocol.HTTP,
     });
 
-    // Fargate service
     const service = new ecs.FargateService(this, "Service", {
       cluster,
       taskDefinition: taskDef,
@@ -129,7 +126,6 @@ export class SseService extends cdk.Resource {
         healthyThresholdCount: 2,
         unhealthyThresholdCount: 3,
       },
-      // Short deregistration delay so rolling deploys finish quickly.
       deregistrationDelay: cdk.Duration.seconds(30),
     });
 

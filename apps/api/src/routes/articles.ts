@@ -20,9 +20,10 @@ function slugify(title: string): string {
 export function createArticlesRouter(publisher: EventPublisher): Router {
   const router = Router();
 
+  // GET reads from the Delivery context (materialized read model)
   router.get("/", async (req, res, next) => {
     try {
-      const articles = await scanItems<Article>(env.ARTICLES_TABLE);
+      const articles = await scanItems<Article>(env.DELIVERY_ARTICLES_TABLE);
       articles.sort(
         (a, b) =>
           new Date(b.publishedAt).getTime() -
@@ -34,6 +35,7 @@ export function createArticlesRouter(publisher: EventPublisher): Router {
     }
   });
 
+  // POST writes to the Editorial context (source of truth)
   router.post(
     "/",
     validate(PostArticleRequestSchema),
@@ -54,12 +56,14 @@ export function createArticlesRouter(publisher: EventPublisher): Router {
           slug: slugify(title),
         };
 
-        await putItem(env.ARTICLES_TABLE, article);
+        await putItem(env.EDITORIAL_ARTICLES_TABLE, article);
 
         const event: ArticlePublishedEvent = {
           type: "ArticlePublished",
           articleId: article.articleId,
           title: article.title,
+          content: article.content,
+          slug: article.slug,
           author: article.author,
           publishedAt: article.publishedAt,
         };

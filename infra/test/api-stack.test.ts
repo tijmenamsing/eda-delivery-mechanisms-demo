@@ -15,22 +15,37 @@ function createTestApiStack(): Template {
 
   const vpc = new ec2.Vpc(depStack, "Vpc", { maxAzs: 2 });
 
-  const articlesTable = new dynamodb.Table(depStack, "Articles", {
+  const editorialArticlesTable = new dynamodb.Table(depStack, "EditorialArticles", {
     partitionKey: { name: "articleId", type: dynamodb.AttributeType.STRING },
     removalPolicy: cdk.RemovalPolicy.DESTROY,
   });
 
-  const blogsTable = new dynamodb.Table(depStack, "Blogs", {
+  const editorialBlogsTable = new dynamodb.Table(depStack, "EditorialBlogs", {
     partitionKey: { name: "blogId", type: dynamodb.AttributeType.STRING },
     removalPolicy: cdk.RemovalPolicy.DESTROY,
   });
 
-  const updatesTable = new dynamodb.Table(depStack, "Updates", {
+  const editorialUpdatesTable = new dynamodb.Table(depStack, "EditorialUpdates", {
     partitionKey: { name: "updateId", type: dynamodb.AttributeType.STRING },
     removalPolicy: cdk.RemovalPolicy.DESTROY,
   });
 
-  const chatMessagesTable = new dynamodb.Table(depStack, "ChatMessages", {
+  const deliveryArticlesTable = new dynamodb.Table(depStack, "DeliveryArticles", {
+    partitionKey: { name: "articleId", type: dynamodb.AttributeType.STRING },
+    removalPolicy: cdk.RemovalPolicy.DESTROY,
+  });
+
+  const deliveryBlogsTable = new dynamodb.Table(depStack, "DeliveryBlogs", {
+    partitionKey: { name: "blogId", type: dynamodb.AttributeType.STRING },
+    removalPolicy: cdk.RemovalPolicy.DESTROY,
+  });
+
+  const deliveryUpdatesTable = new dynamodb.Table(depStack, "DeliveryUpdates", {
+    partitionKey: { name: "updateId", type: dynamodb.AttributeType.STRING },
+    removalPolicy: cdk.RemovalPolicy.DESTROY,
+  });
+
+  const deliveryChatMessagesTable = new dynamodb.Table(depStack, "DeliveryChatMessages", {
     partitionKey: { name: "messageId", type: dynamodb.AttributeType.STRING },
     removalPolicy: cdk.RemovalPolicy.DESTROY,
   });
@@ -65,10 +80,13 @@ function createTestApiStack(): Template {
     env,
     environment: "test",
     vpc,
-    articlesTable,
-    blogsTable,
-    updatesTable,
-    chatMessagesTable,
+    editorialArticlesTable,
+    editorialBlogsTable,
+    editorialUpdatesTable,
+    deliveryArticlesTable,
+    deliveryBlogsTable,
+    deliveryUpdatesTable,
+    deliveryChatMessagesTable,
     redisCluster,
   });
 
@@ -109,12 +127,12 @@ describe("ApiStack", () => {
     });
   });
 
-  it("creates an EventBridge rule for UpdatePosted events", () => {
+  it("creates an EventBridge rule for all domain events", () => {
     const template = createTestApiStack();
     template.hasResourceProperties("AWS::Events::Rule", {
       EventPattern: {
         source: ["bbtg-news.api"],
-        "detail-type": ["UpdatePosted"],
+        "detail-type": ["ArticlePublished", "UpdatePosted", "BlogClosed"],
       },
     });
   });

@@ -1,6 +1,6 @@
-import type { ArticlePublishedEvent, UpdatePostedEvent } from "@bbtg-news/types/events";
+import type { DomainEvent } from "@bbtg-news/types/events";
 
-export type DomainEvent = ArticlePublishedEvent | UpdatePostedEvent;
+export type { DomainEvent };
 
 export interface EventPublisher {
   publish(event: DomainEvent): Promise<void>;

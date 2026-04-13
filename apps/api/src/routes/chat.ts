@@ -23,7 +23,7 @@ export function createChatRouter(): Router {
       }
 
       const messages = await queryItems<ChatMessage>(
-        env.CHAT_MESSAGES_TABLE,
+        env.DELIVERY_CHAT_MESSAGES_TABLE,
         "blogId = :blogId",
         { ":blogId": blogId },
         "blogId-postedAt-index",

@@ -6,8 +6,8 @@ import { setupWebSocket, closeWebSocket } from "../src/ws/setup.js";
 
 vi.mock("../src/lib/env.js", () => ({
   env: {
-    BLOGS_TABLE: "test-blogs",
-    CHAT_MESSAGES_TABLE: "test-chat-messages",
+    DELIVERY_BLOGS_TABLE: "test-delivery-blogs",
+    DELIVERY_CHAT_MESSAGES_TABLE: "test-delivery-chat-messages",
     REDIS_URL: "redis://localhost:6379",
     NODE_ENV: "test",
   },
@@ -160,7 +160,7 @@ describe("WebSocket chat", () => {
 
     // Verify DynamoDB write
     expect(mockPutItem).toHaveBeenCalledWith(
-      "test-chat-messages",
+      "test-delivery-chat-messages",
       expect.objectContaining({
         blogId: "b2",
         author: "TestUser",
@@ -210,6 +210,6 @@ describe("WebSocket chat", () => {
       expect(mockDisconnect).toHaveBeenCalled();
     }, { timeout: 2000 });
 
-    expect(mockUnsubscribe).toHaveBeenCalledWith("chat:b4:messages");
+    expect(mockUnsubscribe).toHaveBeenCalledWith("chat:b4:messages", "blog:b4:closed");
   });
 });

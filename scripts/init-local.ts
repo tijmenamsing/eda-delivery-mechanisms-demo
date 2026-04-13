@@ -16,9 +16,16 @@ const client = new DynamoDBClient({
   },
 });
 
-const articlesTable = process.env["ARTICLES_TABLE"] ?? "dev-articles";
-const blogsTable = process.env["BLOGS_TABLE"] ?? "dev-blogs";
-const updatesTable = process.env["UPDATES_TABLE"] ?? "dev-updates";
+// Editorial context tables
+const editorialArticlesTable = process.env["EDITORIAL_ARTICLES_TABLE"] ?? "dev-editorial-articles";
+const editorialBlogsTable = process.env["EDITORIAL_BLOGS_TABLE"] ?? "dev-editorial-blogs";
+const editorialUpdatesTable = process.env["EDITORIAL_UPDATES_TABLE"] ?? "dev-editorial-updates";
+
+// Delivery context tables
+const deliveryArticlesTable = process.env["DELIVERY_ARTICLES_TABLE"] ?? "dev-delivery-articles";
+const deliveryBlogsTable = process.env["DELIVERY_BLOGS_TABLE"] ?? "dev-delivery-blogs";
+const deliveryUpdatesTable = process.env["DELIVERY_UPDATES_TABLE"] ?? "dev-delivery-updates";
+const deliveryChatMessagesTable = process.env["DELIVERY_CHAT_MESSAGES_TABLE"] ?? "dev-delivery-chat-messages";
 
 async function tableExists(tableName: string): Promise<boolean> {
   const result = await client.send(new ListTablesCommand({}));
@@ -62,20 +69,42 @@ async function createTable(
 async function main(): Promise<void> {
   console.log(`\n🗄  Initializing DynamoDB tables at ${endpoint}\n`);
 
+  // Editorial context (source of truth for authored content)
+  console.log("  📝 Editorial context tables:");
   await createTable(
-    articlesTable,
+    editorialArticlesTable,
     [{ AttributeName: "articleId", KeyType: "HASH" }],
     [{ AttributeName: "articleId", AttributeType: "S" }],
   );
 
   await createTable(
-    blogsTable,
+    editorialBlogsTable,
     [{ AttributeName: "blogId", KeyType: "HASH" }],
     [{ AttributeName: "blogId", AttributeType: "S" }],
   );
 
   await createTable(
-    updatesTable,
+    editorialUpdatesTable,
+    [{ AttributeName: "updateId", KeyType: "HASH" }],
+    [{ AttributeName: "updateId", AttributeType: "S" }],
+  );
+
+  // Delivery context (materialized read models)
+  console.log("\n  📤 Delivery context tables:");
+  await createTable(
+    deliveryArticlesTable,
+    [{ AttributeName: "articleId", KeyType: "HASH" }],
+    [{ AttributeName: "articleId", AttributeType: "S" }],
+  );
+
+  await createTable(
+    deliveryBlogsTable,
+    [{ AttributeName: "blogId", KeyType: "HASH" }],
+    [{ AttributeName: "blogId", AttributeType: "S" }],
+  );
+
+  await createTable(
+    deliveryUpdatesTable,
     [
       { AttributeName: "updateId", KeyType: "HASH" },
     ],
@@ -96,11 +125,8 @@ async function main(): Promise<void> {
     ],
   );
 
-  const chatMessagesTable =
-    process.env["CHAT_MESSAGES_TABLE"] ?? "dev-chat-messages";
-
   await createTable(
-    chatMessagesTable,
+    deliveryChatMessagesTable,
     [{ AttributeName: "messageId", KeyType: "HASH" }],
     [
       { AttributeName: "messageId", AttributeType: "S" },

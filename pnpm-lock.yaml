@@ -140,6 +140,12 @@ importers:
         specifier: ^5.4.0
         version: 5.10.1
     devDependencies:
+      '@aws-sdk/client-dynamodb':
+        specifier: ^3.1014.0
+        version: 3.1014.0
+      '@aws-sdk/lib-dynamodb':
+        specifier: ^3.1014.0
+        version: 3.1014.0(@aws-sdk/client-dynamodb@3.1014.0)
       aws-cdk:
         specifier: ^2.170.0
         version: 2.1113.0

@@ -7,30 +7,26 @@ vi.mock("../src/lib/env.js", () => ({
   env: {
     REDIS_URL: "redis://localhost:6379",
     NODE_ENV: "test",
-    UPDATES_TABLE: "test-updates",
   },
 }));
 
-const mockSubscribe = vi.fn().mockResolvedValue(undefined);
-const mockUnsubscribe = vi.fn().mockResolvedValue(undefined);
+// Mock xread to simulate BLOCK behavior — always wait a bit then return null
+const mockXrange = vi.fn().mockResolvedValue([]);
+const mockXread = vi.fn().mockImplementation(
+  () => new Promise((resolve) => setTimeout(() => resolve(null), 100)),
+);
 const mockDisconnect = vi.fn();
-const mockOn = vi.fn();
 
 vi.mock("../src/lib/redis.js", () => ({
   createSubscriberClient: () => ({
-    subscribe: mockSubscribe,
-    unsubscribe: mockUnsubscribe,
     disconnect: mockDisconnect,
-    on: mockOn,
+    xread: vi.fn(),
   }),
   getRedisClient: () => ({
-    publish: vi.fn(),
+    xrange: vi.fn(),
   }),
-}));
-
-vi.mock("../src/lib/dynamo.js", () => ({
-  getItem: vi.fn().mockResolvedValue(null),
-  queryItems: vi.fn().mockResolvedValue([]),
+  xrange: (...args: unknown[]) => mockXrange(...args),
+  xread: (...args: unknown[]) => mockXread(...args),
 }));
 
 vi.mock("../src/lib/logger.js", () => ({
@@ -52,6 +48,7 @@ function collectSSE(
   server: http.Server,
   path: string,
   headers?: Record<string, string>,
+  waitFor = "connected",
 ): Promise<{ headers: http.IncomingHttpHeaders; body: string }> {
   return new Promise((resolve, reject) => {
     const address = server.address();
@@ -66,8 +63,7 @@ function collectSSE(
         let body = "";
         res.on("data", (chunk: Buffer) => {
           body += chunk.toString();
-          // Once we see the connected event, stop
-          if (body.includes("connected")) {
+          if (body.includes(waitFor)) {
             req.destroy();
             resolve({ headers: res.headers, body });
           }
@@ -90,10 +86,11 @@ describe("Stream routes", () => {
   let server: http.Server;
 
   beforeEach(() => {
-    // Reset call counts but preserve mock implementations
     vi.clearAllMocks();
-    mockSubscribe.mockResolvedValue(undefined);
-    mockUnsubscribe.mockResolvedValue(undefined);
+    mockXrange.mockResolvedValue([]);
+    mockXread.mockImplementation(
+      () => new Promise((resolve) => setTimeout(() => resolve(null), 100)),
+    );
 
     app = express();
     app.use("/stream", createStreamRouter());
@@ -121,10 +118,43 @@ describe("Stream routes", () => {
       expect(body).toContain('"blogId":"test-blog-id"');
     });
 
-    it("subscribes to correct Redis channel", async () => {
-      await collectSSE(server, "/stream/my-blog");
+    it("replays history from Redis Stream via XRANGE", async () => {
+      mockXrange.mockResolvedValue([
+        { id: "1700000000000-0", fields: { payload: '{"content":"Goal!"}' } },
+      ]);
 
-      expect(mockSubscribe).toHaveBeenCalledWith("blog:my-blog:updates");
+      const { body } = await collectSSE(server, "/stream/my-blog", undefined, "Goal!");
+
+      expect(mockXrange).toHaveBeenCalledWith(
+        "stream:blog:my-blog:updates",
+        "-",
+        "+",
+      );
+      expect(body).toContain("id: 1700000000000-0");
+      expect(body).toContain('data: {"content":"Goal!"}');
+    });
+
+    it("uses exclusive start for Last-Event-ID reconnections", async () => {
+      mockXrange.mockResolvedValue([]);
+
+      await collectSSE(server, "/stream/my-blog", {
+        "last-event-id": "1700000000000-0",
+      });
+
+      expect(mockXrange).toHaveBeenCalledWith(
+        "stream:blog:my-blog:updates",
+        "(1700000000000-0",
+        "+",
+      );
+    });
+
+    it("disconnects reader client on request close", async () => {
+      await collectSSE(server, "/stream/test-blog-id");
+
+      // Wait for close handler to fire
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      expect(mockDisconnect).toHaveBeenCalled();
     });
   });
 });

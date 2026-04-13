@@ -55,7 +55,7 @@ export default async function BlogPage({
         </div>
       </header>
 
-      <ChatPanel blogId={blogId} />
+      <ChatPanel blogId={blogId} initialClosed={blog.status === "closed"} />
       <LiveBlog blogId={blogId} initialUpdates={updates} />
     </main>
   );

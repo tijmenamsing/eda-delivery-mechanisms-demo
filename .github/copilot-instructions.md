@@ -1131,15 +1131,11 @@ The following deviations from this spec were made during the initial implementat
 
 ---
 
-### 3. SSE `id:` field and `Last-Event-ID` reconnection replay not implemented
+### 3. SSE uses Redis Streams with native `Last-Event-ID` replay
 
 **Spec said:** Send `id: <updateId>` with each SSE event; on reconnect check `Last-Event-ID` header and replay missed updates from DynamoDB
 
-**Implemented as:** No `id:` field is sent; reconnection resumes from the live stream without replaying missed events
-
-**Reason:** The reconnect-replay feature requires a DynamoDB query on every new SSE connection, which adds latency and complexity. Omitted for the initial demo; the browser's `EventSource` will still auto-reconnect, it just won't recover any updates posted during the disconnected period.
-
-**To implement later:** On `GET /stream/:blogId`, read the `Last-Event-ID` request header. If present, query the updates table for all updates with `postedAt` > the `postedAt` of the update with that `updateId`, and flush them to the client before starting the Redis subscription. Add `id: <updateId>\n` to every SSE event write.
+**Implemented as:** SSE uses Redis Streams (`XRANGE` + `XREAD BLOCK`). The SSE `id:` field is the Redis Stream entry ID (e.g., `1679900000000-0`). New connections replay all history from stream start (`0`). Reconnections resume from the `Last-Event-ID` using the stream entry ID. DynamoDB `delivery-updates` table stores updates for the `GET /blogs/:blogId` REST endpoint; Redis Streams powers the live SSE feed.
 
 ---
 
@@ -1172,3 +1168,32 @@ export default defineConfig({
 ```
 
 Delete `vitest.workspace.ts` once the config file is in place.
+
+---
+
+### 6. Bounded context split — Editorial + Delivery
+
+The system is now split into two bounded contexts:
+
+**Editorial context** (writes): `POST /articles`, `POST /updates`, `POST /blogs/:blogId/close` → editorial DynamoDB tables (`{env}-editorial-articles`, `{env}-editorial-blogs`, `{env}-editorial-updates`).
+
+**Delivery context** (reads): `GET /articles`, `GET /blogs`, `GET /blogs/:blogId`, `GET /stream/:blogId`, `WS /ws/chat/:blogId` → delivery DynamoDB tables (`{env}-delivery-articles`, `{env}-delivery-blogs`, `{env}-delivery-updates`, `{env}-delivery-chat-messages`).
+
+Events (`ArticlePublished`, `UpdatePosted`, `BlogClosed`) are published to EventBridge by the editorial side. A consumer Lambda materializes them into the delivery tables + Redis Streams/pub-sub. In local dev, the `InProcessPublisher` simulates this full flow.
+
+Environment variables have changed from `ARTICLES_TABLE`, `BLOGS_TABLE`, `UPDATES_TABLE`, `CHAT_MESSAGES_TABLE` to `EDITORIAL_*` and `DELIVERY_*` prefixed names.
+
+---
+
+### 7. BlogClosed event for WebSocket teardown
+
+`POST /blogs/:blogId/close` closes a blog in editorial, publishes `BlogClosed` event. Consumer materializes closed status in delivery + publishes to Redis pub/sub `blog:{blogId}:closed`. ECS detects this and closes all WebSocket connections with code `4410` (BLOG_CLOSED). Frontend detects close code 4410 and shows "Blog gesloten" without reconnecting.
+
+---
+
+### 8. Redis Streams replaces Redis pub/sub for SSE
+
+The SSE endpoint (`GET /stream/:blogId`) now uses Redis Streams instead of Redis pub/sub:
+- Stream key: `stream:blog:{blogId}:updates`
+- `XRANGE` for history replay, `XREAD BLOCK` (2s timeout in a loop) for live updates
+- Redis pub/sub is still used for WebSocket chat messages and the BlogClosed signal

@@ -13,10 +13,15 @@ import { EventConsumerFunction } from "../constructs/event-consumer-function";
 export interface ApiStackProps extends cdk.StackProps {
   readonly environment: string;
   readonly vpc: ec2.IVpc;
-  readonly articlesTable: dynamodb.ITable;
-  readonly blogsTable: dynamodb.ITable;
-  readonly updatesTable: dynamodb.ITable;
-  readonly chatMessagesTable: dynamodb.ITable;
+  // Editorial context tables
+  readonly editorialArticlesTable: dynamodb.ITable;
+  readonly editorialBlogsTable: dynamodb.ITable;
+  readonly editorialUpdatesTable: dynamodb.ITable;
+  // Delivery context tables
+  readonly deliveryArticlesTable: dynamodb.ITable;
+  readonly deliveryBlogsTable: dynamodb.ITable;
+  readonly deliveryUpdatesTable: dynamodb.ITable;
+  readonly deliveryChatMessagesTable: dynamodb.ITable;
   readonly redisCluster: elasticache.CfnReplicationGroup;
 }
 
@@ -48,10 +53,13 @@ export class ApiStack extends cdk.Stack {
 
     const authoringFn = new AuthoringFunction(this, "AuthoringFn", {
       vpc: props.vpc,
-      articlesTable: props.articlesTable,
-      blogsTable: props.blogsTable,
-      updatesTable: props.updatesTable,
-      chatMessagesTable: props.chatMessagesTable,
+      editorialArticlesTable: props.editorialArticlesTable,
+      editorialBlogsTable: props.editorialBlogsTable,
+      editorialUpdatesTable: props.editorialUpdatesTable,
+      deliveryArticlesTable: props.deliveryArticlesTable,
+      deliveryBlogsTable: props.deliveryBlogsTable,
+      deliveryUpdatesTable: props.deliveryUpdatesTable,
+      deliveryChatMessagesTable: props.deliveryChatMessagesTable,
       eventBus,
       environment: props.environment,
       redisUrl,
@@ -100,6 +108,7 @@ export class ApiStack extends cdk.Stack {
       { method: "POST", path: "/articles" },
       { method: "GET", path: "/blogs" },
       { method: "GET", path: "/blogs/{blogId}" },
+      { method: "POST", path: "/blogs/{blogId}/close" },
       { method: "POST", path: "/updates" },
       { method: "GET", path: "/chat/{blogId}/messages" },
       { method: "GET", path: "/health" },
@@ -121,25 +130,24 @@ export class ApiStack extends cdk.Stack {
     const sseService = new SseService(this, "SseService", {
       vpc: props.vpc,
       redisUrl,
-      articlesTable: props.articlesTable,
-      blogsTable: props.blogsTable,
-      updatesTable: props.updatesTable,
-      chatMessagesTable: props.chatMessagesTable,
+      deliveryBlogsTable: props.deliveryBlogsTable,
+      deliveryUpdatesTable: props.deliveryUpdatesTable,
+      deliveryChatMessagesTable: props.deliveryChatMessagesTable,
       eventBus,
       environment: props.environment,
     });
 
-    // Note: Redis SG ingress rules are defined in DataStack (VPC CIDR-based)
-    // to avoid cross-stack security group references that cause CDK cycles.
-
     // ------------------------------------------------------------------ //
-    // Event Consumer Lambda — bridges EventBridge → Redis pub/sub
+    // Event Consumer Lambda — bridges EventBridge → Delivery tables + Redis
     // ------------------------------------------------------------------ //
 
     const consumerFn = new EventConsumerFunction(this, "ConsumerFn", {
       vpc: props.vpc,
       eventBus,
       redisUrl,
+      deliveryArticlesTable: props.deliveryArticlesTable,
+      deliveryBlogsTable: props.deliveryBlogsTable,
+      deliveryUpdatesTable: props.deliveryUpdatesTable,
       environment: props.environment,
     });
 

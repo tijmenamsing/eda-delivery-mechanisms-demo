@@ -10,10 +10,17 @@ export interface DataStackProps extends cdk.StackProps {
 }
 
 export class DataStack extends cdk.Stack {
-  public readonly articlesTable: dynamodb.ITable;
-  public readonly blogsTable: dynamodb.ITable;
-  public readonly updatesTable: dynamodb.ITable;
-  public readonly chatMessagesTable: dynamodb.ITable;
+  // Editorial context tables (source of truth for authored content)
+  public readonly editorialArticlesTable: dynamodb.ITable;
+  public readonly editorialBlogsTable: dynamodb.ITable;
+  public readonly editorialUpdatesTable: dynamodb.ITable;
+
+  // Delivery context tables (materialized read models)
+  public readonly deliveryArticlesTable: dynamodb.ITable;
+  public readonly deliveryBlogsTable: dynamodb.ITable;
+  public readonly deliveryUpdatesTable: dynamodb.ITable;
+  public readonly deliveryChatMessagesTable: dynamodb.ITable;
+
   public readonly redisCluster: elasticache.CfnReplicationGroup;
   public readonly redisSecurityGroup: ec2.ISecurityGroup;
 
@@ -26,11 +33,11 @@ export class DataStack extends cdk.Stack {
         : cdk.RemovalPolicy.DESTROY;
 
     // ------------------------------------------------------------------ //
-    // DynamoDB Tables
+    // Editorial Context Tables
     // ------------------------------------------------------------------ //
 
-    this.articlesTable = new dynamodb.Table(this, "ArticlesTable", {
-      tableName: `${props.environment}-articles`,
+    this.editorialArticlesTable = new dynamodb.Table(this, "EditorialArticlesTable", {
+      tableName: `${props.environment}-editorial-articles`,
       partitionKey: {
         name: "articleId",
         type: dynamodb.AttributeType.STRING,
@@ -42,8 +49,8 @@ export class DataStack extends cdk.Stack {
       },
     });
 
-    this.blogsTable = new dynamodb.Table(this, "BlogsTable", {
-      tableName: `${props.environment}-blogs`,
+    this.editorialBlogsTable = new dynamodb.Table(this, "EditorialBlogsTable", {
+      tableName: `${props.environment}-editorial-blogs`,
       partitionKey: {
         name: "blogId",
         type: dynamodb.AttributeType.STRING,
@@ -55,8 +62,53 @@ export class DataStack extends cdk.Stack {
       },
     });
 
-    const updatesTable = new dynamodb.Table(this, "UpdatesTable", {
-      tableName: `${props.environment}-updates`,
+    const editorialUpdatesTable = new dynamodb.Table(this, "EditorialUpdatesTable", {
+      tableName: `${props.environment}-editorial-updates`,
+      partitionKey: {
+        name: "updateId",
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy,
+      pointInTimeRecoverySpecification: {
+        pointInTimeRecoveryEnabled: props.environment === "prod",
+      },
+    });
+
+    this.editorialUpdatesTable = editorialUpdatesTable;
+
+    // ------------------------------------------------------------------ //
+    // Delivery Context Tables
+    // ------------------------------------------------------------------ //
+
+    this.deliveryArticlesTable = new dynamodb.Table(this, "DeliveryArticlesTable", {
+      tableName: `${props.environment}-delivery-articles`,
+      partitionKey: {
+        name: "articleId",
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy,
+      pointInTimeRecoverySpecification: {
+        pointInTimeRecoveryEnabled: props.environment === "prod",
+      },
+    });
+
+    this.deliveryBlogsTable = new dynamodb.Table(this, "DeliveryBlogsTable", {
+      tableName: `${props.environment}-delivery-blogs`,
+      partitionKey: {
+        name: "blogId",
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy,
+      pointInTimeRecoverySpecification: {
+        pointInTimeRecoveryEnabled: props.environment === "prod",
+      },
+    });
+
+    const deliveryUpdatesTable = new dynamodb.Table(this, "DeliveryUpdatesTable", {
+      tableName: `${props.environment}-delivery-updates`,
       partitionKey: {
         name: "updateId",
         type: dynamodb.AttributeType.STRING,
@@ -69,7 +121,7 @@ export class DataStack extends cdk.Stack {
     });
 
     // GSI for querying updates by blogId sorted by postedAt
-    updatesTable.addGlobalSecondaryIndex({
+    deliveryUpdatesTable.addGlobalSecondaryIndex({
       indexName: "blogId-postedAt-index",
       partitionKey: {
         name: "blogId",
@@ -82,14 +134,14 @@ export class DataStack extends cdk.Stack {
       projectionType: dynamodb.ProjectionType.ALL,
     });
 
-    this.updatesTable = updatesTable;
+    this.deliveryUpdatesTable = deliveryUpdatesTable;
 
     // ------------------------------------------------------------------ //
-    // Chat Messages Table
+    // Chat Messages Table (delivery context only — user-generated content)
     // ------------------------------------------------------------------ //
 
-    const chatMessagesTable = new dynamodb.Table(this, "ChatMessagesTable", {
-      tableName: `${props.environment}-chat-messages`,
+    const deliveryChatMessagesTable = new dynamodb.Table(this, "DeliveryChatMessagesTable", {
+      tableName: `${props.environment}-delivery-chat-messages`,
       partitionKey: {
         name: "messageId",
         type: dynamodb.AttributeType.STRING,
@@ -99,7 +151,7 @@ export class DataStack extends cdk.Stack {
       timeToLiveAttribute: "ttl",
     });
 
-    chatMessagesTable.addGlobalSecondaryIndex({
+    deliveryChatMessagesTable.addGlobalSecondaryIndex({
       indexName: "blogId-postedAt-index",
       partitionKey: {
         name: "blogId",
@@ -112,7 +164,7 @@ export class DataStack extends cdk.Stack {
       projectionType: dynamodb.ProjectionType.ALL,
     });
 
-    this.chatMessagesTable = chatMessagesTable;
+    this.deliveryChatMessagesTable = deliveryChatMessagesTable;
 
     // ------------------------------------------------------------------ //
     // ElastiCache Redis (L1 — no stable L2 construct available)
@@ -153,19 +205,12 @@ export class DataStack extends cdk.Stack {
         cacheSubnetGroupName: subnetGroup.cacheSubnetGroupName,
         securityGroupIds: [this.redisSecurityGroup.securityGroupId],
         atRestEncryptionEnabled: true,
-        // TLS disabled for simplicity in this demo — ioredis default connects
-        // without TLS. Enable in production and use rediss:// URL prefix.
         transitEncryptionEnabled: false,
       },
     );
 
-    // Ensure the subnet group exists before the cluster tries to reference it.
     this.redisCluster.addDependency(subnetGroup);
 
-    // Allow any resource in the VPC to connect to Redis on port 6379.
-    // This covers ECS tasks, Lambda functions, and any future services that
-    // need pub/sub access. Keeping the rule here (next to the SG definition)
-    // avoids cross-stack security group references which cause CDK cycles.
     this.redisSecurityGroup.addIngressRule(
       ec2.Peer.ipv4(props.vpc.vpcCidrBlock),
       ec2.Port.tcp(6379),

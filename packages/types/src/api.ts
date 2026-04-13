@@ -64,6 +64,14 @@ export type GetBlogDetailResponse = z.infer<
   typeof GetBlogDetailResponseSchema
 >;
 
+// --- Close Blog ---
+
+export const CloseBlogResponseSchema = z.object({
+  blog: BlogSchema,
+});
+
+export type CloseBlogResponse = z.infer<typeof CloseBlogResponseSchema>;
+
 // --- Chat ---
 
 export const SendChatMessageRequestSchema = z.object({

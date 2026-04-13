@@ -48,10 +48,13 @@ const apiStack = new ApiStack(app, `${prefix}-api`, {
   tags,
   environment,
   vpc: networkStack.vpc,
-  articlesTable: dataStack.articlesTable,
-  blogsTable: dataStack.blogsTable,
-  updatesTable: dataStack.updatesTable,
-  chatMessagesTable: dataStack.chatMessagesTable,
+  editorialArticlesTable: dataStack.editorialArticlesTable,
+  editorialBlogsTable: dataStack.editorialBlogsTable,
+  editorialUpdatesTable: dataStack.editorialUpdatesTable,
+  deliveryArticlesTable: dataStack.deliveryArticlesTable,
+  deliveryBlogsTable: dataStack.deliveryBlogsTable,
+  deliveryUpdatesTable: dataStack.deliveryUpdatesTable,
+  deliveryChatMessagesTable: dataStack.deliveryChatMessagesTable,
   redisCluster: dataStack.redisCluster,
 });
 

@@ -143,3 +143,5 @@ vite.config.ts.timestamp-*
 
 # CDK
 cdk.out
+
+.DS_Store
